@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Nippo-Variable';
+  src: url('../src/assets/fonts/Nippo-Variable.ttf') format('truetype');
+  font-weight: 200 700;
+  font-display: swap;
+  font-style: normal;
+}
+
+/* Minimal Scrollbar */
+.scrollbar::-webkit-scrollbar {
+  width: 4px; /* Thin scrollbar */
+}
+.scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 100, 100, 0.5); /* Subtle color */
+  border-radius: 10px;
+}
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 100, 100, 0.8);
+}
+.scrollbar::-webkit-scrollbar-track {
+  background: transparent; /* Hide track */
+}
+
+.test {
+  color : red
+}
