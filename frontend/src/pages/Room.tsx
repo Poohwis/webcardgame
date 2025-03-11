@@ -11,7 +11,6 @@ import {
   sendStartMessageToServer,
 } from "../utils/sendToServerGameMessage";
 import { useGameStateStore } from "../store/gameStateStore";
-import { AnimatePresence, motion } from "motion/react";
 import PlayerActionContainer from "../components/PlayerActionButtonContainer";
 import CardContainer from "../components/CardContainer";
 
@@ -174,14 +173,14 @@ export default function RoomPage() {
     if (gameStateStore.currentState == "nextGame") {
       handleConfirmGameEnd();
     }
-    if (gameStateStore.currentState == "playCard") {
-      //simulate if the server latency for test multiple send will not active
-      // setTimeout(()=>{
-      // setIsSending(false)
-      // },2000)
+  }, [gameStateStore.currentState]);
+
+  useEffect(()=>{
+    if (gameStateStore.lastPlayedBy.slice(-1)[0] == state.order) {
       setIsSending(false);
     }
-  }, [gameStateStore.currentState]);
+  },[gameStateStore.lastPlayedBy]
+  )
 
   const handleConfirmRoundEnd = () => {
     if (gameStateStore.turn != state.order) return;
@@ -191,20 +190,17 @@ export default function RoomPage() {
       console.log("call phase end");
       sendNextRoundMessageToServer(state.ws);
       setIsSending(false);
-    }, 2000);
+    }, 1000);
 
-    // sendNextRoundMessageToServer(state.ws)
   };
 
   const handleConfirmGameEnd = () => {
     if (gameStateStore.turn != state.order) return;
-
     setTimeout(() => {
       console.log("call phase end");
       sendNextGameMessageToServer(state.ws);
       setIsSending(false);
-    }, 2000);
-    // sendNextGameMessageToServer(state.ws)
+    }, 1000);
   };
   return (
     <div className="w-screen h-screen bg-primary flex items-center justify-center overflow-hidden">

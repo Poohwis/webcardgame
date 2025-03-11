@@ -39,7 +39,7 @@ export const useGameStateStore = create<GameState>()((set)=> ({
         const newCards = [...state.cards];
          indices.forEach(index => {
             if (index >= 0 && index < newCards.length) {
-                newCards.splice(index, 1);
+                newCards[index] = - 1
             }
         });
         return { cards: newCards };
@@ -58,10 +58,6 @@ export const useGameStateStore = create<GameState>()((set)=> ({
             playersScore: payload.state?.playersScore ?? state.playersScore,
             isOver: payload.state?.isOver ?? state.isOver,
         }))
-        // set((state)=>({
-        //     ...state,
-        //     ...payload,
-        // }))
     },
     resetGameState : ()=> set(()=>({...initialState})),
     
