@@ -8,6 +8,7 @@ export interface GameState {
     cards : number[]
     playersChance : number[]
     lastPlayedBy : number[]
+    lastPlayedCardCount : number
     playersHandCount : number[]
     playersScore : number[]
     isOver : boolean
@@ -26,6 +27,7 @@ const initialState = {
     cards : [],
     playersChance : [],
     lastPlayedBy : [],
+    lastPlayedCardCount : 0,
     playersHandCount: [],
     playersScore : [],
     isOver : false,
@@ -54,6 +56,7 @@ export const useGameStateStore = create<GameState>()((set)=> ({
             roundPlayCard: payload.state?.roundPlayCard ?? state.roundPlayCard,
             playersChance: payload.state?.playersChance ?? state.playersChance,
             lastPlayedBy : payload.state?.lastPlayedBy ?? state.lastPlayedBy,
+            lastPlayedCardCount : payload.state?.lastPlayedCardCount ?? state.lastPlayedCardCount,
             playersHandCount : payload.state?.playersHandCount ?? state.playersHandCount,
             playersScore: payload.state?.playersScore ?? state.playersScore,
             isOver: payload.state?.isOver ?? state.isOver,

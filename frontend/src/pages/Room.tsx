@@ -1,3 +1,4 @@
+import { motion } from "motion/react";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import UserPanel from "../components/UserPanel";
@@ -13,6 +14,9 @@ import {
 import { useGameStateStore } from "../store/gameStateStore";
 import PlayerActionContainer from "../components/PlayerActionButtonContainer";
 import CardContainer from "../components/CardContainer";
+import { useCardAnimationStore } from "../store/cardAnimationStore";
+import wait from "../utils/wait";
+import TableContainer from "../components/TableContainer";
 
 const initialState = {
   ws: null as WebSocket | null,
@@ -58,6 +62,7 @@ export default function RoomPage() {
 
   const usersRef = useRef<User[]>([]);
   const gameStateStore = useGameStateStore();
+  const cardAnimationStore = useCardAnimationStore();
 
   useEffect(() => {
     usersRef.current = state.users;
@@ -69,7 +74,13 @@ export default function RoomPage() {
     const ws = new WebSocket(`ws://localhost:8080/ws/${wsId}`);
 
     const handleMessage = (e: MessageEvent) => {
-      handleWebSocketMessage(e, dispatch, usersRef, gameStateStore);
+      handleWebSocketMessage(
+        e,
+        dispatch,
+        usersRef,
+        gameStateStore,
+        cardAnimationStore
+      );
     };
 
     ws.addEventListener("message", handleMessage);
@@ -102,10 +113,11 @@ export default function RoomPage() {
     return null;
   }
 
+  // lines under this is temp for test TODO: DELETE
   const handleSim = () => {
     const ws = new WebSocket(`ws://localhost:8080/ws/${wsId}`);
   };
-  //4 line under this is temp for test TODO: DELETE
+  const [show, setShow] = useState(true);
   const [action, setAction] = useState("");
   const [data, setData] = useState("");
   const [payload, setPayload] = useState({});
@@ -126,7 +138,7 @@ export default function RoomPage() {
     });
   };
 
-  const handlePlayCardAction = () => {
+  const handlePlayCardAction = async () => {
     if (isSending) return;
     if (gameStateStore.turn !== state.order) {
       console.log("Invalid player turn");
@@ -138,7 +150,9 @@ export default function RoomPage() {
     }
     setIsSending(true);
     //Update client card
+
     gameStateStore.playCards(selectCardIndices);
+    await wait(1000);
     setSelectedCardIndices([]);
 
     //Send to server
@@ -167,31 +181,30 @@ export default function RoomPage() {
   };
 
   useEffect(() => {
-    if (gameStateStore.currentState == "nextRound") {
+    if (gameStateStore.currentState == "toNextRound") {
       handleConfirmRoundEnd();
     }
-    if (gameStateStore.currentState == "nextGame") {
+    if (gameStateStore.currentState == "toNextGame") {
       handleConfirmGameEnd();
     }
   }, [gameStateStore.currentState]);
 
-  useEffect(()=>{
+  useEffect(() => {
     if (gameStateStore.lastPlayedBy.slice(-1)[0] == state.order) {
       setIsSending(false);
     }
-  },[gameStateStore.lastPlayedBy]
-  )
+  }, [gameStateStore.lastPlayedBy]);
 
   const handleConfirmRoundEnd = () => {
     if (gameStateStore.turn != state.order) return;
 
     //simulate the call summary animation todo: do the animation
+    //TODO : show summary of call
     setTimeout(() => {
       console.log("call phase end");
       sendNextRoundMessageToServer(state.ws);
       setIsSending(false);
     }, 1000);
-
   };
 
   const handleConfirmGameEnd = () => {
@@ -206,10 +219,14 @@ export default function RoomPage() {
     <div className="w-screen h-screen bg-primary flex items-center justify-center overflow-hidden">
       <div className="relative max-w-screen-xl w-full h-full flex flex-col">
         {/* MAIN AREA*/}
-        {/* temp card table */}
-        <div className="flex flex-1 relative w-full h-full">
+        <div className="flex flex-1 flex-col relative w-full h-full">
+          {/* TABLE */}
+          <div className="flex flex-1 relative">
+            <TableContainer playerOrder={state.order} />
+          </div>
+          {/* PLAYER HAND */}
           <div className="self-end items-center justify-center flex w-full">
-            <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="flex flex-col items-center justify-center -space-y-6">
               <CardContainer
                 cards={gameStateStore.cards}
                 selectCardIndices={selectCardIndices}
@@ -254,7 +271,19 @@ export default function RoomPage() {
         ))}
       </div> */}
       {/* for test game logic panel */}
-      <div className="absolute right-0 top-0 text-sm">
+      <button
+        className="text-sm absolute top-0 right-0 font-pixelify"
+        onClick={() => setShow(!show)}
+      >
+        show gameState
+      </button>
+      <button
+        className="text-sm absolute top-4 right-0 font-pixelify"
+        onClick={() => sendStartMessageToServer(state.ws)}
+      >
+        start
+      </button>
+      <div className={`absolute right-0 top-6 text-sm ${show ? "" : "hidden"}`}>
         <div>gameState: {gameStateStore.currentState}</div>
         <div>turn: {gameStateStore.turn}</div>
         <div>round: {gameStateStore.round}</div>
@@ -264,6 +293,7 @@ export default function RoomPage() {
         <div>playersHandCount: {gameStateStore.playersHandCount}</div>
         <div>playersScore: {gameStateStore.playersScore}</div>
         <div>lastPlayedBy: {gameStateStore.lastPlayedBy.slice(-1)}</div>
+        <div>lastPlayedCardCount: {gameStateStore.lastPlayedCardCount}</div>
         <div>cards: {gameStateStore.cards}</div>
         <div>selected : {selectCardIndices}</div>
         <div>isSending: {isSending.toString()}</div>

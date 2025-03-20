@@ -3,13 +3,26 @@
 @tailwind utilities;
 
 @font-face {
-  font-family: 'Nippo-Variable';
-  src: url('../src/assets/fonts/Nippo-Variable.ttf') format('truetype');
+  font-family: "Nippo-Variable";
+  src: url("../src/assets/fonts/Nippo-Variable.ttf") format("truetype");
   font-weight: 200 700;
   font-display: swap;
   font-style: normal;
 }
 
+@font-face {
+  font-family: "Silkscreen-Bold";
+  src : url("../src/assets/fonts/Silkscreen-Bold.ttf")
+  
+}
+@font-face {
+  font-family: "Silkscreen-Regular";
+  src : url("../src/assets/fonts/Silkscreen-Regular.ttf")
+}
+@font-face {
+  font-family: "VT323-Regular";
+  src : url("../src/assets/fonts/VT323-Regular.ttf")
+}
 /* Minimal Scrollbar */
 .scrollbar::-webkit-scrollbar {
   width: 4px; /* Thin scrollbar */
@@ -25,6 +38,8 @@
   background: transparent; /* Hide track */
 }
 
-.test {
-  color : red
-}
+.vertical-writing
+{
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+} 

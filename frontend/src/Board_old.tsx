@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import Card from "./components/Card";
+import Card from "./components/Card_old";
 import { motion, useMotionValue, useSpring } from "motion/react";
 import { CARD } from "./constant";
 

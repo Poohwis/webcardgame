@@ -1,4 +1,9 @@
 import { motion } from "motion/react";
+import {
+  CardAnimationMode,
+  useCardAnimationStore,
+} from "../store/cardAnimationStore";
+import GameButton from "./GameButton";
 interface PlayerActionContainerProps {
   handleCallAction: () => void;
   handlePlayCardAction: () => void;
@@ -17,34 +22,39 @@ export default function PlayerActionContainer({
   lastPlayedBy,
   selectCardIndices,
 }: PlayerActionContainerProps) {
+  const { addToQueue } = useCardAnimationStore();
   const isCanThrowCard = order == turn && selectCardIndices.length > 0;
   const isCanCall = order == turn && lastPlayedBy.length !== 0;
+
+  const playCardAnimation = () => {
+    addToQueue([
+      CardAnimationMode.FlipS,
+      CardAnimationMode.PlayCard,
+      CardAnimationMode.Fan,
+    ]);
+  };
+
   return (
-    <div className="flex flex-row font-nippo space-x-4">
-      <motion.button
-        onClick={handleCallAction}
-        whileTap={isCanCall ? { y: 2 } : { x: [-5, 5, 0] }}
-        className={`${
-          isCanCall
-            ? "bg-red-500  hover:opacity-90 hover:cursor-pointer text-white/80"
-            : "bg-lightgray text-white/50"
-        } transition-colors p-4  rounded-md border-b-4 border-b-gray-700`}
-        disabled={!isCanCall || isSending}
-      >
-        CALL LIAR
-      </motion.button>
-      <motion.button
-        onClick={handlePlayCardAction}
-        whileTap={isCanThrowCard ? { y: 2 } : { x: [-5, 5, 0] }}
-        className={`${
-          isCanThrowCard
-            ? "bg-blue-500 hover:opacity-90 hover:cursor-pointer text-white/80"
-            : "bg-lightgray text-white/50"
-        } transition-colors p-4 rounded-md border-b-4 border-b-gray-700`}
-        disabled={!isCanThrowCard || isSending}
-      >
-        <div className="drop-shadow-2xl">THROW CARD</div>
-      </motion.button>
+    <div className="flex flex-row gap-x-4 ">
+      <GameButton
+        onClick={() => {
+          handleCallAction()
+        }}
+        isSending={isSending}
+        disabled={!isCanCall}
+        title={"CALL LIAR!"}
+        activeColor={"bg-deepred"}
+      />
+      <GameButton
+        onClick={() => {
+          playCardAnimation();
+          handlePlayCardAction();
+        }}
+        isSending={isSending}
+        disabled={!isCanThrowCard}
+        title={"THROW CARD"}
+        activeColor={"bg-black"}
+      />
     </div>
   );
 }

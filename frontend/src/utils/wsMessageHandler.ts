@@ -1,3 +1,4 @@
+import { CardAnimationState } from "../store/cardAnimationStore";
 import { GameState } from "../store/gameStateStore";
 import { Action,  MessageEventPayload, User } from "../type";
 import handleGameAction from "./handleGameAction";
@@ -6,7 +7,8 @@ export function handleWebSocketMessage(
   e: MessageEvent,
   dispatch: React.Dispatch<Action>,
   usersRef: React.MutableRefObject<User[]>,
-  gameStateStore : GameState
+  gameStateStore : GameState,
+  cardAnimationStore : CardAnimationState
 ) {
   const message: MessageEventPayload = JSON.parse(e.data);
   console.log(message)
@@ -77,8 +79,7 @@ export function handleWebSocketMessage(
       break;
       
       case "game" :
-        handleGameAction(payload, gameStateStore)
-        console.log(payload)
+        handleGameAction(payload, gameStateStore, cardAnimationStore)
         break
 
     default:
