@@ -12,15 +12,6 @@ export default async function handleGameAction(
 ) {
   const { updateGameState } = gameStateStore;
   const { addToQueue } = cardAnimationStore;
-  const dealCardAnimations = () => {
-    addToQueue([
-      CardAnimationMode.FlipToBack,
-      CardAnimationMode.Fold,
-      CardAnimationMode.Fall,
-      CardAnimationMode.Fan,
-      CardAnimationMode.FlipToFront,
-    ]);
-  };
 
   const nextRoundCardAnimations = () => {
     addToQueue([
@@ -37,7 +28,6 @@ export default async function handleGameAction(
   switch (payload.action) {
     case "start":
       updateGameState(payload);
-      dealCardAnimations();
       break;
     case "playCard":
       updateGameState(payload);

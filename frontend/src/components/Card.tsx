@@ -8,8 +8,8 @@ interface CardProps {
   card: number;
   removedCard: number | null;
 }
-const CARD_WIDTH = 120;
-const CARD_HEIGHT = 170;
+export const CARD_WIDTH = 120;
+export const CARD_HEIGHT = 170;
 export default function Card({
   cardX,
   cardY,

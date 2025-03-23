@@ -4,7 +4,7 @@ import {
   CardAnimationMode,
   useCardAnimationStore,
 } from "../store/cardAnimationStore";
-import Card from "./Card";
+import Card, { CARD_WIDTH } from "./Card";
 
 interface CardContainerProps {
   cards: number[];
@@ -24,6 +24,7 @@ export default function CardContainer({
   const ref = useRef<HTMLDivElement>(null);
   const [windowWidth, setWindowWidth] = useState(0);
   const [removedCards, setRemovedCards] = useState<(number | null)[]>(cards);
+  const [isCardSelectable, setIsCardSelectable] = useState(false);
 
   useEffect(() => {
     setRemovedCards((prev) =>
@@ -97,10 +98,9 @@ export default function CardContainer({
     };
 
     const cardFoldX = () => {
+      const foldedOffset = 20
       const remainingHand = cards.filter((card) => card !== -1);
-      const handWidth =
-        remainingHand.length * 120 - (remainingHand.length - 1) * (120 - 100);
-      const centerX = windowWidth / 2 - handWidth / 2;
+      const centerX = windowWidth / 2 - ((CARD_WIDTH ) + (foldedOffset * 4))/2 
       let completedAnimations = 0;
       const totalToAnimate = remainingHand.length;
       for (let i = 0; i < cards.length; i++) {
@@ -206,6 +206,14 @@ export default function CardContainer({
 
     switch (currentMode) {
       //test
+      case CardAnimationMode.SelectableOn:
+        setIsCardSelectable(true);
+        processNext();
+        break;
+      case CardAnimationMode.SelectableOff:
+        setIsCardSelectable(false);
+        processNext();
+        break;
       case CardAnimationMode.Fold:
         cardFoldX();
         break;
@@ -225,6 +233,7 @@ export default function CardContainer({
         cardUpY();
         break;
       case CardAnimationMode.PlayCard:
+        // setIsCardSelectable(false)
         cardPlayedY();
         break;
       //use
@@ -239,7 +248,7 @@ export default function CardContainer({
       default:
         break;
     }
-    if (currentMode === CardAnimationMode.Ready) {
+    if (currentMode === CardAnimationMode.Ready && isCardSelectable) {
       cardSelectY();
     }
 
@@ -300,7 +309,7 @@ export default function CardContainer({
       <motion.div style={{ y: -300 }}>
         {cards.map((card, index) => (
           <Card
-          key={index}
+            key={index}
             cardX={cardX[index]}
             cardY={cardY[index]}
             index={index}

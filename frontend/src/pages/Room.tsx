@@ -217,6 +217,7 @@ export default function RoomPage() {
   };
   return (
     <div className="w-screen h-screen bg-primary flex items-center justify-center overflow-hidden">
+      <div className="w-1 bg-red-500 h-full absolute left-[50%]">center line</div>
       <div className="relative max-w-screen-xl w-full h-full flex flex-col">
         {/* MAIN AREA*/}
         <div className="flex flex-1 flex-col relative w-full h-full">

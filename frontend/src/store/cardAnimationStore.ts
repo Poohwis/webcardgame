@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 export enum CardAnimationMode {
+  Standby = "standby",
   Fan = "fan",
   PlayCard = "playcard",
   Fold = "fold",
@@ -10,7 +11,9 @@ export enum CardAnimationMode {
   Up = "up",
   Ready = "ready",
   Wait = "wait",
-  FlipS = "flips"
+  FlipS = "flips",
+  SelectableOn = "selectableOn",
+  SelectableOff = "selectableOff",
 }
 
 export interface CardAnimationState {
@@ -18,6 +21,7 @@ export interface CardAnimationState {
   currentMode: CardAnimationMode;
   addToQueue: (modes: CardAnimationMode[]) => void;
   processNext: () => void;
+  dealCardAnimation: ()=>void
 }
 
 export const useCardAnimationStore = create<CardAnimationState>((set) => ({
@@ -40,4 +44,16 @@ export const useCardAnimationStore = create<CardAnimationState>((set) => ({
 
       return { queue: newQueue, currentMode: nextMode };
     }),
+    dealCardAnimation : ()=> set((state) => {
+      state.addToQueue([
+        CardAnimationMode.SelectableOff,
+        CardAnimationMode.FlipToBack,
+        CardAnimationMode.Fold,
+        CardAnimationMode.Fall,
+        CardAnimationMode.Fan,
+        CardAnimationMode.FlipToFront,
+        CardAnimationMode.SelectableOn,
+      ]);
+      return {};
+    })
 }));
