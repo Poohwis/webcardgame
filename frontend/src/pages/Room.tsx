@@ -17,6 +17,7 @@ import CardContainer from "../components/CardContainer";
 import { useCardAnimationStore } from "../store/cardAnimationStore";
 import wait from "../utils/wait";
 import TableContainer from "../components/TableContainer";
+import UserBanner from "../components/UserBanner";
 
 const initialState = {
   ws: null as WebSocket | null,
@@ -57,6 +58,8 @@ function reducer(state: typeof initialState, action: Action) {
 }
 export default function RoomPage() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [isSending, setIsSending] = useState(false);
+  const [selectCardIndices, setSelectedCardIndices] = useState<number[]>([]);
   const { wsId } = useParams();
   const navigate = useNavigate();
 
@@ -121,11 +124,10 @@ export default function RoomPage() {
   const [action, setAction] = useState("");
   const [data, setData] = useState("");
   const [payload, setPayload] = useState({});
-  const [isSending, setIsSending] = useState(false);
   useEffect(() => {
     setPayload({ action: action, data: data });
   }, [action, data]);
-  const [selectCardIndices, setSelectedCardIndices] = useState<number[]>([]);
+  //end of temp
 
   const handleSelectCard = (index: number) => {
     setSelectedCardIndices((prev) => {
@@ -144,21 +146,34 @@ export default function RoomPage() {
       console.log("Invalid player turn");
       return;
     }
-    if (selectCardIndices.length < 1) {
+    if (
+      selectCardIndices.length < 1 &&
+      gameStateStore.forcePlayerOrder !== state.order
+    ) {
       console.log("Not select the card");
       return;
     }
     setIsSending(true);
-    //Update client card
 
-    gameStateStore.playCards(selectCardIndices);
+    //Update client card
+    let playedCards = [];
+    if (gameStateStore.forcePlayerOrder !== -1) {
+      const remainHand = gameStateStore.cards
+        .map((card, index) => (card !== -1 ? index : card))
+        .filter((value) => value !== -1);
+      gameStateStore.playCards(remainHand);
+      setSelectedCardIndices(remainHand);
+      playedCards = remainHand.map((index) => gameStateStore.cards[index]);
+    } else {
+      gameStateStore.playCards(selectCardIndices);
+      playedCards = selectCardIndices.map(
+        (index) => gameStateStore.cards[index]
+      );
+    }
     await wait(1000);
     setSelectedCardIndices([]);
 
     //Send to server
-    const playedCards = selectCardIndices.map(
-      (index) => gameStateStore.cards[index]
-    );
     const payload = { action: "playCard", playedCards: playedCards };
     sendToServer(state.ws, "game", payload);
   };
@@ -181,53 +196,63 @@ export default function RoomPage() {
   };
 
   useEffect(() => {
+    if (gameStateStore.lastPlayedBy.slice(-1)[0] == state.order) {
+      setIsSending(false);
+    }
+  }, [gameStateStore.lastPlayedBy]);
+
+  const [isNextTableRequest, setIsNextTableRequest] = useState(false);
+  const handleRequestNextTable = () => {
+    setIsNextTableRequest(true);
+  };
+
+  useEffect(() => {
+    if (!isNextTableRequest) return;
+
     if (gameStateStore.currentState == "toNextRound") {
       handleConfirmRoundEnd();
     }
     if (gameStateStore.currentState == "toNextGame") {
       handleConfirmGameEnd();
     }
-  }, [gameStateStore.currentState]);
 
-  useEffect(() => {
-    if (gameStateStore.lastPlayedBy.slice(-1)[0] == state.order) {
-      setIsSending(false);
-    }
-  }, [gameStateStore.lastPlayedBy]);
+    setIsNextTableRequest(false);
+  }, [isNextTableRequest, gameStateStore.currentState]);
 
   const handleConfirmRoundEnd = () => {
+    //TODO : change; may change to confirm with each player (w/chance left/active)
+    //send nextround/game request; if all fullfil confirm next action,
+    //currently make the caller send the message for simplicity
     if (gameStateStore.turn != state.order) return;
 
-    //simulate the call summary animation todo: do the animation
-    //TODO : show summary of call
-    setTimeout(() => {
-      console.log("call phase end");
-      sendNextRoundMessageToServer(state.ws);
-      setIsSending(false);
-    }, 1000);
+    //TODO: reset client state (called card/ lastplaycardcount)
+    sendNextRoundMessageToServer(state.ws);
+    setIsSending(false);
   };
 
   const handleConfirmGameEnd = () => {
     if (gameStateStore.turn != state.order) return;
-    setTimeout(() => {
-      console.log("call phase end");
-      sendNextGameMessageToServer(state.ws);
-      setIsSending(false);
-    }, 1000);
+
+    sendNextGameMessageToServer(state.ws);
+    setIsSending(false);
   };
+
   return (
     <div className="w-screen h-screen bg-primary flex items-center justify-center overflow-hidden">
-      <div className="w-1 bg-red-500 h-full absolute left-[50%]">center line</div>
       <div className="relative max-w-screen-xl w-full h-full flex flex-col">
         {/* MAIN AREA*/}
         <div className="flex flex-1 flex-col relative w-full h-full">
           {/* TABLE */}
           <div className="flex flex-1 relative">
-            <TableContainer playerOrder={state.order} />
+            <TableContainer
+              playerOrder={state.order}
+              handleRequestNextTable={handleRequestNextTable}
+            />
+          <UserBanner users={state.users} order={state.order}/>
           </div>
           {/* PLAYER HAND */}
           <div className="self-end items-center justify-center flex w-full">
-            <div className="flex flex-col items-center justify-center -space-y-6">
+            <div className="flex flex-col items-center justify-center -space-y-6 w-full px-4 sm:mb-0 mb-6">
               <CardContainer
                 cards={gameStateStore.cards}
                 selectCardIndices={selectCardIndices}
@@ -285,6 +310,7 @@ export default function RoomPage() {
         start
       </button>
       <div className={`absolute right-0 top-6 text-sm ${show ? "" : "hidden"}`}>
+        <div>playerOrder : {state.order}</div>
         <div>gameState: {gameStateStore.currentState}</div>
         <div>turn: {gameStateStore.turn}</div>
         <div>round: {gameStateStore.round}</div>
@@ -297,6 +323,9 @@ export default function RoomPage() {
         <div>lastPlayedCardCount: {gameStateStore.lastPlayedCardCount}</div>
         <div>cards: {gameStateStore.cards}</div>
         <div>selected : {selectCardIndices}</div>
+        <div>calledCards: {gameStateStore.calledCards}</div>
+        <div>isCallSuccess: {gameStateStore.isCallSuccess.toString()}</div>
+        <div>forcePlayOrder: {gameStateStore.forcePlayerOrder}</div>
         <div>isSending: {isSending.toString()}</div>
         <div className="flex flex-col">
           <a href="http://localhost:5173" className="border border-black px-2">

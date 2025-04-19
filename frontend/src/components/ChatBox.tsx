@@ -34,7 +34,7 @@ export default function ChatBox({
     }
   }, [chats]);
   return (
-    <div className="font-nippo w-full h-[160px] flex flex-col m-4 bg-transparent border-2 border-accent rounded-md px-2 pb-2 ">
+    <div className="font-nippo w-full h-[160px] sm:flex hidden flex-col m-4 bg-transparent border-2 border-accent rounded-md px-2 pb-2 ">
       <div className="flex flex-row justify-between">
         <div className="font-semibold text-sm text-orange">Message box</div>
         <div className="text-gray hover:cursor-pointer">-</div>
@@ -53,6 +53,7 @@ export default function ChatBox({
           value={chatInput}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
+              if(chatInput.trim() === "")return
               handleMessageSend("chat");
             }
           }}

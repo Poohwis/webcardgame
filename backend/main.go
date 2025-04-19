@@ -52,6 +52,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+// make it handle when player leave the game in mid play (remove player and continue)
 func main() {
 	server := &Server{
 		Rooms: make(map[string]*Room),
@@ -241,7 +242,7 @@ func handleGameIncomingMessage(room *Room, message Message) {
 	case "start":
 		log.Print("Game start")
 
-		room.ClientGameState, room.ServerGameState = game.NewGameState()
+		room.ClientGameState, room.ServerGameState = game.NewGameState(len(room.Clients))
 
 		for client := range room.Clients {
 			playerIndex := room.Users[client].Order - 1
@@ -253,12 +254,11 @@ func handleGameIncomingMessage(room *Room, message Message) {
 		}
 	case "nextRound":
 		room.ClientGameState.NextRound(room.ServerGameState)
-
 		for client := range room.Clients {
 			playerIndex := room.Users[client].Order - 1
 			if room.ClientGameState.PlayersChance[playerIndex] == 0 {
 				sendToClient(client, "game", map[string]interface{}{
-					"action": "wait",
+					"action": "nextRound",
 					"cards":  []int{},
 					"state":  room.ClientGameState,
 				})
@@ -313,22 +313,23 @@ func handleGameIncomingMessage(room *Room, message Message) {
 
 		// Send updated game state to clients
 		sendToAll(room, "game", map[string]interface{}{
-			"action": "playCard",
-			"state":  room.ClientGameState,
+			"action": "playCard", "state": room.ClientGameState,
 		})
 	case "call":
 		lastPlayOrder := room.ClientGameState.LastPlayedBy
 
 		log.Printf("PlayerOrder:%v called : %v", message.SenderSlot, lastPlayOrder[len(lastPlayOrder)-1])
-		isGameEnd := room.ClientGameState.CallCheck(room.ServerGameState, message.SenderSlot, lastPlayOrder[len(lastPlayOrder)-1])
-		action := "nextRound"
+		isGameEnd, isCallSuccess := room.ClientGameState.CallCheck(room.ServerGameState, message.SenderSlot, lastPlayOrder[len(lastPlayOrder)-1])
+		action := "toNextRound"
 		if isGameEnd {
-			action = "nextGame"
+			action = "toNextGame"
 		}
 		log.Printf("%v", action)
 		sendToAll(room, "game", map[string]interface{}{
-			"action": action,
-			"state":  room.ClientGameState,
+			"action":        action,
+			"state":         room.ClientGameState,
+			"calledCards":   room.ServerGameState.OnTableCard,
+			"isCallSuccess": isCallSuccess,
 		})
 
 	case "s":

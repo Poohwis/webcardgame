@@ -43,3 +43,7 @@
   writing-mode: vertical-rl;
   text-orientation: upright;
 } 
+
+.clip-polygon {
+  clip-path: polygon(0% 20%, 20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%);
+}

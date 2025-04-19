@@ -1,24 +1,28 @@
+//use different animation implement approch from card container, and i think this is easy to specify card position of many //but need manual manuver for laping of each animation (not desirable)
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useGameStateStore } from "../store/gameStateStore";
 import wait from "../utils/wait";
+import { useTableAnimationStore } from "../store/tableAnimationStore";
+import {
+  CardAnimationMode,
+  useCardAnimationStore,
+} from "../store/cardAnimationStore";
+import { Transition } from "motion/react";
+import TableCard from "./TableCard";
+import Indicator from "./Indicator";
+import { useTableStateStore } from "../store/tableStateStore";
 
-const TABLE_SIZE = 400;
-const ONTABLECARD_WIDTH = 100;
-const ONTABLECARD_HEIGHT = 142;
-const direction = [
-  [0, 1],
-  [-1, 0],
-  [0, -1],
-  [1, 0],
-];
+export const ONTABLECARD_WIDTH = 100;
+export const ONTABLECARD_HEIGHT = 142;
+export const TABLE_SIZE = 400;
 interface TableContainerProps {
   playerOrder: number;
+  handleRequestNextTable: () => void;
 }
-type playedCardStack = {
+export type playedCardStack = {
   id: number;
   zIndex: number;
-  isDealed: boolean;
   rotateY: number;
   startRotateZ: number;
   endRotateZ: number;
@@ -30,9 +34,24 @@ type playedCardStack = {
   endY: number;
   isFixed: boolean;
   isRoundPlayCard: boolean;
+  dealToOrder: number;
   card: string;
 };
-const cardAnimationVariants = {
+
+type AnimationMode =
+  | "default"
+  | "dealing"
+  | "shuffle"
+  | "throw"
+  | "down"
+  | "explode"
+  | "call"
+  | "jump";
+
+const tableCardAnimationVariants: Record<
+  AnimationMode,
+  { transition: Transition }
+> = {
   default: {
     transition: { duration: 0.5, ease: [0.25, 1, 0.5, 1] },
   },
@@ -46,40 +65,163 @@ const cardAnimationVariants = {
     transition: { duration: 0.5, ease: [0.25, 1, 0.5, 1] },
   },
   down: { transition: { duration: 0.2 } },
+  explode: { transition: { duration: 0.6, ease: "easeOut" } },
+  call: { transition: { delay: 1, duration: 0.5, type: "spring" } },
+  jump: { transition: { duration: 0 } },
 };
-export default function TableContainer({ playerOrder }: TableContainerProps) {
+
+
+export default function TableContainer({
+  playerOrder,
+  handleRequestNextTable,
+}: TableContainerProps) {
   const cardsName = ["ACE", "JACK", "KING", "QUEEN", "JOKER"];
-  const { currentState, roundPlayCard } = useGameStateStore();
   const [playedCardStack, setPlayedCardStack] = useState<playedCardStack[]>([]);
-  const { lastPlayedBy, lastPlayedCardCount } = useGameStateStore();
+  const [lastPlayOrder, setLastPlayOrder] = useState(-1);
+  const [animationMode, setAnimationMode] = useState<AnimationMode>("default");
+  const {tableState, setTableState} = useTableStateStore()
 
-  const [animationMode, setAnimationMode] =
-    useState<keyof typeof cardAnimationVariants>("default");
-
+  const { currentState, roundPlayCard, isCallSuccess, playersChance } =
+    useGameStateStore();
+  const { lastPlayedBy, lastPlayedCardCount, calledCards, cards } =
+    useGameStateStore();
+  const { returnCardAnimation, dealCardAnimation, addToQueue } =
+    useCardAnimationStore();
+  const { addToTableQueue, tableProcessNext, tableCurrentQueue } =
+    useTableAnimationStore();
 
   useEffect(() => {
-    const isResetTable =
-      currentState === "toNextRound" || currentState === "toNextGame";
-    if (isResetTable) {
-      gatherCard();
-    } else if (lastPlayedCardCount && lastPlayedBy.length > 0) {
-      for (let i = 0; i < lastPlayedCardCount; i++) {
-        throwCard(lastPlayedBy.slice(-1)[0]);
+    const tableStartAnimation = [
+      "inCard",
+      "dealCardToHand",
+      "dealCard",
+      "reveal",
+      "explode",
+    ];
+    const nextRoundAnimation = ["dealCard", "reveal", "explode"];
+    const callCardRevealAnimationQueue = ["callCheck", "scatter"];
+    const callAction = async () => {
+      const delay = 5000;
+      addToTableQueue(callCardRevealAnimationQueue);
+      await wait(delay);
+
+      if (cards.length !== 0) {
+        returnCardAnimation();
       }
+      await wait(500);
+
+      addToTableQueue(["gather", "overhandShuffle"]);
+      await wait(1500);
+
+      handleRequestNextTable();
+    };
+    switch (currentState) {
+      case "start":
+        if (tableState !== "initial") return;
+        addToTableQueue(tableStartAnimation);
+        break;
+      case "toNextRound":
+        const nextRoundCallResult = isCallSuccess ? "callSuccess" : "callFail";
+        if (nextRoundCallResult === "callSuccess") {
+          callAction();
+        } else {
+          callAction();
+        }
+        setTableState(nextRoundCallResult);
+        break;
+      case "nextRound":
+        if (cards.length !== 0) {
+          addToTableQueue(["dealCardToHand"]);
+        }
+        addToTableQueue(nextRoundAnimation);
+        setTableState("nextRound");
+        break;
+      case "nextGame":
+        if (cards.length !== 0) {
+          addToTableQueue(["dealCardToHand"]);
+        }
+        addToTableQueue(nextRoundAnimation);
+        setTableState("nextGame");
+        break;
+      case "toNextGame":
+        const nextGameCallResult = isCallSuccess ? "callSuccess" : "callFail";
+        if (nextGameCallResult === "callSuccess") {
+          callAction();
+        } else {
+          callAction();
+        }
+        setTableState(nextGameCallResult);
+        break;
     }
-  }, [lastPlayedBy, currentState]);
+  }, [currentState]);
+
+  //Play card listener
+  useEffect(() => {
+    const lastPlay = lastPlayedBy.slice(-1)[0];
+    if (
+      lastPlayedCardCount &&
+      lastPlayedBy.length > 0 &&
+      lastPlayOrder !== lastPlay
+    ) {
+      throwCard(lastPlay, lastPlayedCardCount);
+      setLastPlayOrder(lastPlay);
+    }
+  }, [lastPlayedBy]);
+
+  //Animation control
+  useEffect(() => {
+    if (tableCurrentQueue === "default") return;
+    switch (tableCurrentQueue) {
+      case "reveal":
+        roundPlayCardReveal();
+        break;
+      case "explode":
+        explode();
+        setTableState("start");
+        break;
+      case "dealCard":
+        dealCardFromStack();
+        break;
+      case "inCard":
+        inCard();
+        break;
+      case "callCheck":
+        callCheck();
+        break;
+      case "testCallCheck":
+        testCallCheck(3);
+        break;
+      case "scatter":
+        scatter();
+        break;
+      case "gather":
+        gatherCard();
+        break;
+      case "reset":
+        resetCard();
+        break;
+      case "overhandShuffle":
+        overhandShuffle();
+        break;
+      case "dealCardToHand":
+        dealCardToHand();
+        break;
+    }
+  }, [tableCurrentQueue]);
 
   const roundPlayCardReveal = async () => {
+    setAnimationMode("default");
     const getTopCard = (stack: typeof playedCardStack) =>
-      [...stack].sort((a, b) => b.zIndex - a.zIndex).find((c) => !c.isDealed);
-
+      [...stack]
+        .sort((a, b) => b.zIndex - a.zIndex)
+        .find((c) => c.dealToOrder === -1);
     setPlayedCardStack((prev) => {
       const topCard = getTopCard(prev);
       return prev.map((c) =>
         c.zIndex === topCard?.zIndex
           ? {
               ...c,
-              endScale: 2.5,
+              endScale: 2.5 * (isSmallWindow ? 0.75 : 1),
               endX: 0,
               endY: 0,
               rotateY: 180,
@@ -90,10 +232,8 @@ export default function TableContainer({ playerOrder }: TableContainerProps) {
           : c
       );
     });
-
     await wait(1000);
     setAnimationMode("down");
-
     setPlayedCardStack((prev) => {
       const topCard = getTopCard(prev);
       return prev.map((c) =>
@@ -102,38 +242,34 @@ export default function TableContainer({ playerOrder }: TableContainerProps) {
           : c
       );
     });
-
     await wait(200);
     setAnimationMode("default");
-
     setPlayedCardStack((prev) => {
       const topCard = getTopCard(prev);
       return prev.map((c) =>
         c.zIndex === topCard?.zIndex
           ? {
               ...c,
-              endScale: 1,
               endX: Math.random() * 20 - 10,
               endY: Math.random() * 20 - 10,
-              rotateY: 180,
               endRotateZ: Math.random() * 40 - 20,
             }
           : c
       );
     });
-
-    explode();
+    tableProcessNext();
   };
 
-  const explode = () => {
+  const explode = async () => {
+    setAnimationMode("explode");
     setPlayedCardStack((prev) => {
       return prev.map((c) => {
         const angle = Math.random() * Math.PI * 2;
-        const distance = Math.random() * 70 + 200;
+        const distance = Math.random() * 100 + TABLE_SIZE;
         const rotateZ = Math.random() * 500;
         const explodedX = Math.cos(angle) * distance;
         const explodedY = Math.sin(angle) * distance;
-        return !c.isDealed && !c.isRoundPlayCard
+        return c.dealToOrder === -1 && !c.isRoundPlayCard
           ? {
               ...c,
               endX: explodedX,
@@ -144,16 +280,141 @@ export default function TableContainer({ playerOrder }: TableContainerProps) {
           : c;
       });
     });
+    tableProcessNext();
+    addToQueue([CardAnimationMode.ClickableOn]);
+    await wait(1000);
+    setAnimationMode("default");
+  };
+
+  const callCheck = async () => {
+    setAnimationMode("call");
+    const calledCardStack = [...playedCardStack]
+      .sort((a, b) => b.zIndex - a.zIndex)
+      .slice(0, lastPlayedCardCount);
+
+    //First: Show called card
+    for (const card of calledCardStack) {
+      const index = calledCardStack.findIndex((t) => t.zIndex === card.zIndex);
+      const position = (calledCardStack.length - 1) / 2 - index;
+      const a = Math.random() * 50 + 10;
+      const endY = a * Math.pow(position, 2);
+      const endRotateZ = position * -15 + (Math.random() * 15 - 7.5);
+      setPlayedCardStack((prev) =>
+        prev.map((c) =>
+          c.zIndex === card.zIndex
+            ? {
+                ...c,
+                endScale: 2.5 * (isSmallWindow ? 0.75 : 1),
+                endX: position * 200 * (isSmallWindow ? 0.25 : 1),
+                endY: endY,
+                endRotateZ: endRotateZ,
+                isFixed: true,
+                rotateY: 180,
+                card: cardsName[calledCards[index]] || "temp",
+              }
+            : c
+        )
+      );
+      await wait(100);
+    }
+    await wait(3000);
+
+    //Second: reset round play card
+    setPlayedCardStack((prev) =>
+      prev.map((c) =>
+        c.isRoundPlayCard === true ? { ...c, isRoundPlayCard: false } : c
+      )
+    );
+
+    //Third: Down card
+    setAnimationMode("down");
+    setTableState("resultUpdate")
+    for (const card of calledCardStack) {
+      const index = calledCardStack.findIndex((t) => t.zIndex === card.zIndex);
+      const position = (calledCardStack.length - 1) / 2 - index;
+      setPlayedCardStack((prev) =>
+        prev.map((c) =>
+          c.zIndex === card.zIndex
+            ? {
+                ...c,
+                endScale: 1,
+                endX: position * 40,
+                endY: c.endY - 25,
+                isRoundPlayCard: true,
+              }
+            : c
+        )
+      );
+    }
+    await wait(200);
+
+    //Forth: Jitter down card
+    for (const card of calledCardStack) {
+      const index = calledCardStack.findIndex((t) => t.zIndex === card.zIndex);
+      const position = (calledCardStack.length - 1) / 2 - index;
+      setPlayedCardStack((prev) =>
+        prev.map((c) =>
+          c.zIndex === card.zIndex
+            ? {
+                ...c,
+                endX: c.endX + (Math.random() * 5 - 2.5),
+                endY: c.endY + (Math.random() * 5 - 2.5),
+                endRotateZ: Math.random() * 20 - 10 + position * -15,
+              }
+            : c
+        )
+      );
+    }
+
+    setAnimationMode("default");
+    tableProcessNext();
+  };
+
+  const scatter = async () => {
+    setAnimationMode("explode");
+    setPlayedCardStack((prev) => {
+      return prev.map((c) => {
+        if (c.dealToOrder === -1 && !c.isRoundPlayCard) {
+          const distance = Math.random() * 100 + TABLE_SIZE;
+
+          const dirX = c.endX;
+          const dirY = c.endY;
+
+          const magnitude = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
+          const normX = dirX / magnitude;
+          const normY = dirY / magnitude;
+
+          const dx = normX * distance;
+          const dy = normY * distance;
+
+          const rotateZ = Math.random() * 500;
+
+          return {
+            ...c,
+            endX: c.endX + dx,
+            endY: c.endY + dy,
+            endRotateZ: rotateZ,
+            isFixed: false,
+          };
+        }
+        return c;
+      });
+    });
+
+    await wait(1000);
+
+    setAnimationMode("default");
+    tableProcessNext();
   };
 
   const inCard = async () => {
+    setAnimationMode("default");
     for (let i = 0; i <= 25; i++) {
       setPlayedCardStack((prev) => [
         ...prev,
         {
           id: prev.length,
           zIndex: prev.length,
-          isDealed: false,
           rotateY: 0,
           startRotateZ: 0,
           endRotateZ: 0,
@@ -165,64 +426,192 @@ export default function TableContainer({ playerOrder }: TableContainerProps) {
           endScale: 1,
           isFixed: true,
           isRoundPlayCard: false,
+          dealToOrder: -1,
           card: "",
         },
       ]);
       await wait(40);
     }
+
+    await wait(200);
+    tableProcessNext();
   };
 
-  const throwCard = (lastPlayedBy: number) => {
-    setAnimationMode("throw");
-    const diffPosition = (4 + lastPlayedBy - playerOrder) % 4;
-    const startPosition = direction[diffPosition];
-    const startRotateZ = 90 * diffPosition;
-    const endRotateZ = Math.floor(Math.random() * 21) - 10 + startRotateZ;
-    const startX = startPosition[0] * (TABLE_SIZE - ONTABLECARD_HEIGHT + 50);
-    const startY = startPosition[1] * (TABLE_SIZE - ONTABLECARD_HEIGHT + 50);
-    const endX = Math.floor(Math.random() * 30) - 10;
-    const endY = Math.floor(Math.random() * 30) - 10;
-    setPlayedCardStack((prev) => {
-      return [
-        ...prev,
-        {
-          id: prev.length,
-          zIndex: prev.length,
-          isDealed: false,
-          rotateY: 0,
-          startRotateZ,
-          endRotateZ,
-          startX,
-          startY,
-          endX,
-          endY,
-          startScale: 1,
-          endScale: 1,
-          isFixed: false,
-          isRoundPlayCard: false,
-          card: "",
-        },
-      ];
-    });
+  const throwCard = (lastPlayedBy: number, lastPlayCount: number) => {
     setAnimationMode("default");
+    const diffPosition = ((4 + lastPlayedBy - playerOrder) % 4) + 1;
+    for (let i = 0; i < lastPlayCount; i++) {
+      setPlayedCardStack((prev) => {
+        const target = prev.find((c) => c.dealToOrder === diffPosition)?.zIndex;
+        if (!target) {
+          return prev;
+        }
+        const randomOffset = (range: number, fix: number) =>
+          Math.random() * range - fix;
+        const maxZIndex = Math.max(...prev.map((c) => c.zIndex), 0);
+        return prev.map((c) =>
+          c.zIndex === target
+            ? {
+                ...c,
+                endX: randomOffset(30, 10),
+                endY: randomOffset(30, 10),
+                endRotateZ: randomOffset(21, 10) + c.endRotateZ,
+                dealToOrder: -1,
+                zIndex: maxZIndex + 1,
+              }
+            : c
+        );
+      });
+    }
   };
 
-  const removeCard = () => {
-    setPlayedCardStack([]);
-  };
-  const gatherCard = () => {
+  const resetCard = (
+    type: "default" | "shuffle" = "default",
+    isAnimationJump = false
+  ) => {
+    setAnimationMode(isAnimationJump ? "jump" : "default");
     setPlayedCardStack((prev) =>
       prev.map((c) => ({
         ...c,
-        endX: c.zIndex,
-        endY: -c.zIndex,
+        endX: type == "default" ? c.id : c.zIndex,
+        endY: type == "default" ? -c.id : -c.zIndex,
+        zIndex: type == "default" ? c.id : c.zIndex,
         endRotateZ: 0,
-        isDealed: false,
+        dealToOrder: -1,
         rotateY: 0,
+        endScale: 1,
+        isRoundPlayCard: false,
       }))
     );
   };
+
+  const testCallCheck = async (input: number = 1) => {
+    setAnimationMode("call");
+    const tempTarget = [...playedCardStack]
+      .sort((a, b) => b.zIndex - a.zIndex)
+      .slice(0, input);
+
+    //First: Show called card
+    for (const card of tempTarget) {
+      const index = tempTarget.findIndex((t) => t.zIndex === card.zIndex);
+      const position = (tempTarget.length - 1) / 2 - index;
+      const a = Math.random() * 50 + 10;
+      const endY = a * Math.pow(position, 2);
+      const endRotateZ = position * -15 + (Math.random() * 15 - 7.5);
+      setPlayedCardStack((prev) =>
+        prev.map((c) =>
+          c.zIndex === card.zIndex
+            ? {
+                ...c,
+                endScale: 2.5 * (isSmallWindow ? 0.75 : 1),
+                endX: position * 200,
+                endY: endY,
+                endRotateZ: endRotateZ,
+                isFixed: true,
+                rotateY: 180,
+                card: cardsName[calledCards[index]] || "temp",
+              }
+            : c
+        )
+      );
+      await wait(100);
+    }
+    await wait(3000);
+
+    //Second: reset round play card
+    setPlayedCardStack((prev) =>
+      prev.map((c) =>
+        c.isRoundPlayCard ? { ...c, isRoundPlayCard: false } : c
+      )
+    );
+
+    //Third: Down card
+    setAnimationMode("down");
+    for (const card of tempTarget) {
+      const index = tempTarget.findIndex((t) => t.zIndex === card.zIndex);
+      const position = (tempTarget.length - 1) / 2 - index;
+      setPlayedCardStack((prev) =>
+        prev.map((c) =>
+          c.zIndex === card.zIndex
+            ? {
+                ...c,
+                endScale: 1,
+                endX: position * 40,
+                endY: c.endY - 25,
+                isRoundPlayCard: true,
+              }
+            : c
+        )
+      );
+    }
+    await wait(200);
+
+    //Forth: Jitter down card
+    for (const card of tempTarget) {
+      const index = tempTarget.findIndex((t) => t.zIndex === card.zIndex);
+      const position = (tempTarget.length - 1) / 2 - index;
+      setPlayedCardStack((prev) =>
+        prev.map((c) =>
+          c.zIndex === card.zIndex
+            ? {
+                ...c,
+                endX: c.endX + (Math.random() * 5 - 2.5),
+                endY: c.endY + (Math.random() * 5 - 2.5),
+                endRotateZ: Math.random() * 20 - 10 + position * -15,
+              }
+            : c
+        )
+      );
+    }
+
+    setAnimationMode("default");
+    tableProcessNext();
+  };
+
+  const gatherCard = async () => {
+    setAnimationMode("default");
+    setPlayedCardStack((prev) =>
+      prev.map((c) =>
+        c.isRoundPlayCard
+          ? {
+              ...c,
+              endX: c.endX + 200 * (isSmallWindow ? 0.75 : 1),
+              endScale: 2 * (isSmallWindow ? 0.75 : 1),
+              rotateY: Math.random() * 30 + 150,
+            }
+          : c
+      )
+    );
+    const stack = [...playedCardStack].sort((a, b) => a.zIndex - b.zIndex);
+
+    for (let i = 0; i < stack.length; i++) {
+      const card = stack[i];
+      setPlayedCardStack((prev) =>
+        prev.map((c) =>
+          c.zIndex === card.zIndex
+            ? {
+                ...c,
+                endX: i,
+                endY: -i,
+                endRotateZ: 0,
+                dealToOrder: -1,
+                rotateY: 0,
+                zIndex: i,
+                isRoundPlayCard: false,
+                endScale: 1,
+              }
+            : c
+        )
+      );
+
+      await wait(50);
+    }
+    await wait(500);
+    tableProcessNext();
+  };
+
   const shuffleCard = () => {
+    setAnimationMode("default");
     setPlayedCardStack((prev) =>
       prev.map((c) => ({
         ...c,
@@ -233,15 +622,40 @@ export default function TableContainer({ playerOrder }: TableContainerProps) {
     );
   };
 
+  const dealCardToHand = async () => {
+    await wait(200);
+    dealCardAnimation();
+    tableProcessNext();
+  };
+
   //TODO : add skip chance0 player
   const dealCardFromStack = async () => {
+    const direction = [
+      [0, 1],
+      [-1, 0],
+      [0, -1],
+      [1, 0],
+    ];
     setAnimationMode("dealing");
+    let skipPosition = playersChance;
+
+    while (skipPosition.length < 4) {
+      skipPosition.push(0);
+    }
+
+    skipPosition = skipPosition
+      .map((value, index) => (value === 0 ? index : -1))
+      .filter((index) => index !== -1)
+      .map((value) => (value - (playerOrder - 1) + 4) % 4);
+
     for (let j = 0; j <= 3; j++) {
+      if (skipPosition.includes(j)) continue;
       for (let i = 0; i <= 4; i++) {
+        //hard coded number of cards for now TODO://Change to recieve the value from server
         setPlayedCardStack((prev) => {
           const firstUnDealedIndex = [...prev]
             .sort((a, b) => b.zIndex - a.zIndex)
-            .find((c) => !c.isDealed)?.zIndex;
+            .find((c) => c.dealToOrder === -1)?.zIndex;
 
           if (firstUnDealedIndex === undefined) return prev;
 
@@ -254,7 +668,7 @@ export default function TableContainer({ playerOrder }: TableContainerProps) {
                   endY:
                     direction[j][1] * (TABLE_SIZE - ONTABLECARD_HEIGHT + 50),
                   endRotateZ: 90 * j,
-                  isDealed: true,
+                  dealToOrder: j + 1,
                   isFixed: false,
                 }
               : c
@@ -264,6 +678,9 @@ export default function TableContainer({ playerOrder }: TableContainerProps) {
       }
     }
     setAnimationMode("default");
+    await wait(2000);
+
+    tableProcessNext();
   };
 
   const overhandShuffle = async () => {
@@ -273,11 +690,11 @@ export default function TableContainer({ playerOrder }: TableContainerProps) {
       setPlayedCardStack((prev) =>
         prev.map((c) =>
           c.zIndex <= stackSize
-            ? { ...c, endY: ONTABLECARD_HEIGHT + 20 - c.id }
-            : { ...c, endY: c.endY - stackSize, endX: c.endX - stackSize }
+            ? { ...c, endY: ONTABLECARD_HEIGHT + 100 - c.id, isFixed : false }
+            : { ...c, endY: c.endY - stackSize, endX: c.endX - stackSize, isFixed: false }
         )
       );
-      await wait(300);
+      await wait(150);
       setPlayedCardStack((prev) =>
         prev.map((c) =>
           c.zIndex <= stackSize
@@ -285,148 +702,161 @@ export default function TableContainer({ playerOrder }: TableContainerProps) {
             : { ...c, zIndex: c.zIndex - (stackSize + 1) }
         )
       );
-      gatherCard();
-      await wait(350);
+      resetCard("shuffle");
+      await wait(150);
     }
     setAnimationMode("default");
+    await wait(300);
+    tableProcessNext();
   };
+
+  const [isSmallWindow, setIsSmallWindow] = useState(
+    () => window.innerWidth < 640
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 640) {
+        setIsSmallWindow(window.innerWidth < 640);
+      } else {
+        setIsSmallWindow(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize(); // Initial check
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+  const [tableSize, setTableSize] = useState(400);
+  useEffect(() => {
+    const largeTableDimension = 400;
+    const smallTableDimension = 250;
+    if (isSmallWindow) {
+      setTableSize(smallTableDimension);
+    } else {
+      setTableSize(largeTableDimension);
+    }
+  }, [isSmallWindow]);
 
   const [show, setShow] = useState(false);
   return (
-    <div className="w-full h-full flex items-center justify-center relative">
-      <motion.div
-        style={{
-          width: TABLE_SIZE,
-          height: TABLE_SIZE,
-          overflow: show ? "visible" : "hidden",
-        }}
-        className="overflow-hi bg-darkgreen border-4 border-lightgreen rounded-full relative 
+    <>
+      <div className="w-full h-full flex items-center justify-center relative mt-12">
+        {/* outer indicator */}
+        <Indicator
+          playerOrder={playerOrder}
+          tableSize={tableSize}
+        />
+        {/* table */}
+        <motion.div
+          // initial={{ width: TABLE_SIZE, height: TABLE_SIZE }}
+          style={{ width: tableSize, height: tableSize }}
+          animate={
+            tableState !== "initial"
+              ? { width: tableSize + 25, height: tableSize + 25 }
+              : {}
+          }
+          // style={{ overflow: show ? "visible" : "hidden" }}
+          className="overflow-hidden bg-transparent rounded-full relative
         flex items-center justify-center"
-      >
-        <div className="absolute top-0 z-30 flex flex-col">
-          <button onClick={() => setShow(!show)}>
-            {animationMode}: {show ? "show" : "hide"}
-          </button>
-          <button className="" onClick={() => removeCard()}>
-            remove
-          </button>
-          <button className="" onClick={() => gatherCard()}>
-            gather
-          </button>
-          <button
-            className=""
-            onClick={() => {
-              for (let i = 0; i <= 25; i++) {
-                throwCard(Math.floor(Math.random() * 5));
-              }
-            }}
-          >
-            throw
-          </button>
-          <button
-            className=""
-            onClick={() => {
-              throwCard(4);
-            }}
-          >
-            throw0
-          </button>
-          <button className="" onClick={() => shuffleCard()}>
-            shuffle
-          </button>
-          <button className="" onClick={() => overhandShuffle()}>
-            overhand
-          </button>
-          <button className="" onClick={() => dealCardFromStack()}>
-            dealCard
-          </button>
-          <button className="" onClick={() => inCard()}>
-            inCard
-          </button>
-          <button className="" onClick={() => explode()}>
-            explode
-          </button>
-          <button className="" onClick={() => roundPlayCardReveal()}>
-            reveal
-          </button>
-        </div>
-
-        {playedCardStack.map(
-          ({
-            id,
-            rotateY,
-            startRotateZ,
-            endRotateZ,
-            startX,
-            startY,
-            endY,
-            endX,
-            zIndex,
-            startScale,
-            endScale,
-            isFixed,
-            card,
-          }) => (
-            <motion.div
-              key={id}
-              initial={{
-                y: startY,
-                x: startX,
-                rotateZ: startRotateZ,
-                scale: startScale,
-              }}
-              animate={{
-                y: endY,
-                x: endX,
-                rotateY,
-                rotateZ: endRotateZ,
-                scale: endScale,
-              }}
-              whileTap={{
-                rotateY: 180,
-                scale: 2.5,
-                x: 0,
-                y: 0,
-                position: "fixed",
-              }}
-              transition={cardAnimationVariants[animationMode].transition}
-              style={{
-                width: ONTABLECARD_WIDTH,
-                height: ONTABLECARD_HEIGHT,
-                zIndex: zIndex,
-                transformStyle: "preserve-3d",
-                position: isFixed ? "fixed" : "absolute",
-              }}
-              className="absolute hover:cursor-default bg-white rounded-lg  border-[1px]
-               border-gray-200 font-silkbold text-white"
-            >
-              {/* Front Side */}
-              <div
-                className="absolute w-full h-full bg-white rounded-lg flex pt-[3.3px] pl-[6.6px]"
-                style={{
-                  transform: "rotateY(180deg)",
-                  backfaceVisibility: "hidden",
-                }}
-              >
-                <div className="text-2xl font-bold  text-black">{card[0]}</div>
-              </div>
-
-              {/* Back Side */}
-              <div
-                className="absolute bg-white w-full h-full p-1 text-white rounded-lg"
-                style={{
-                  backfaceVisibility: "hidden",
-                }}
-              >
-                <div className="flex items-center justify-center flex-col text-xl w-full h-full bg-red-800 rounded-lg">
-                  <div>{id}</div>
-                  <div>{isFixed ? "fixed" : "ab"}</div>
-                </div>
-              </div>
-            </motion.div>
-          )
-        )}
-      </motion.div>
-    </div>
+        >
+          <div className="flex items-center justify-center bg-darkgreen rounded-full sm:w-[400px] sm:h-[400px] w-[250px] h-[250px]" />
+          {playedCardStack.map((card, index) => (
+            <TableCard
+              key={index}
+              card={card}
+              isSmallWindow={isSmallWindow}
+              transition={tableCardAnimationVariants[animationMode].transition}
+            />
+          ))}
+        </motion.div>
+      </div>
+    </>
   );
 }
+
+{
+  /* temp for test animation TODO:DELETE */
+}
+// <div className="z-50 absolute left-[50%] flex flex-col font-pixelify items-start w-[150px]">
+//   <div>tableState: {tableState}</div>
+//   <div>aniMode: {animationMode}</div>
+//   <button className="hover:cursor-pointer" onClick={() => setShow(!show)}>
+//     {show ? "show" : "hide"}
+//   </button>
+//   <button className="hover:cursor-pointer" onClick={() => resetCard()}>
+//     resetPosition
+//   </button>
+//   <button className="hover:cursor-pointer" onClick={shuffleCard}>
+//     shuffleCard
+//   </button>
+//   <button className="hover:cursor-pointer" onClick={dealCardFromStack}>
+//     deal
+//   </button>
+//   <button className="hover:cursor-pointer" onClick={roundPlayCardReveal}>
+//     reveal
+//   </button>
+//   <button className="hover:cursor-pointer" onClick={explode}>
+//     explode
+//   </button>
+//   <button className="hover:cursor-pointer" onClick={scatter}>
+//     scatter
+//   </button>
+//   <button className="hover:cursor-pointer" onClick={gatherCard}>
+//     gatherCard
+//   </button>
+//   <button className="hover:cursor-pointer" onClick={overhandShuffle}>
+//     overhandShuffle
+//   </button>
+//   <div className="flex flex-row gap-x-1 justify-between w-full">
+//     {Array.from({ length: 3 }).map((_, i) => (
+//       <button
+//         key={i}
+//         className="hover:cursor-pointer"
+//         onClick={() => testCallCheck(i + 1)}
+//       >
+//         c{i + 1}
+//       </button>
+//     ))}
+//   </div>
+//   <div className="flex flex-row gap-x-1 justify-between w-full">
+//     {Array.from({ length: 4 }).map((_, i) => (
+//       <button
+//         key={i}
+//         className="hover:cursor-pointer"
+//         onClick={() =>
+//           throwCard(i + 1, Math.floor(Math.random() * 2) + 1)
+//         }
+//       >
+//         {i + 1}
+//       </button>
+//     ))}
+//   </div>
+//   <button
+//     className="hover:cursor-pointer"
+//     onClick={() => addToTableQueue(["testCallCheck", "scatter"])}
+//   >
+//     testCallCheck
+//   </button>
+// </div>
+
+// const [showList, setShowList] = useState(true);
+// inside main div
+// <div className="text-sm absolute flex flex-col z-50  h-full w-auto left-[150px]">
+//   <button onClick={() => setShowList(!showList)}>
+//     {showList ? "show" : "hide"}
+//   </button>
+//   {playedCardStack.map((c) => (
+//     <div
+//       key={c.id}
+//       style={{ visibility: showList ? "hidden" : "visible" }}
+//     >
+//       id:{c.id} rpc:{c.isRoundPlayCard ? "✅" : ""} zIndex:{c.zIndex}{" "}
+//       to:{c.dealToOrder} rotateZ: {c.endRotateZ.toFixed(0)} x:{" "}
+//       {c.endX.toFixed(0)} y: {c.endY.toFixed(0)}
+//     </div>
+//   ))}
+// </div>

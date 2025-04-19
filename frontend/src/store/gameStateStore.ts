@@ -2,16 +2,20 @@ import {create} from "zustand"
 
 export interface GameState {
     currentState : string,
-    turn : number,
+    turn : number, 
     round : number,
     roundPlayCard : number,
     cards : number[]
+    calledCards : number[]
+    isCallSuccess : boolean,
     playersChance : number[]
-    lastPlayedBy : number[]
+    /**  1-base index */
+    lastPlayedBy : number[] 
     lastPlayedCardCount : number
     playersHandCount : number[]
     playersScore : number[]
     isOver : boolean
+    forcePlayerOrder : number
     setCurrentState : (action : string)=>void 
     setCards : (cards : number[]) =>void
     playCards: (indices : number[])=>void
@@ -25,12 +29,15 @@ const initialState = {
     round : -1,
     roundPlayCard : -1,
     cards : [],
+    calledCards : [],
+    isCallSuccess : false,
     playersChance : [],
     lastPlayedBy : [],
     lastPlayedCardCount : 0,
     playersHandCount: [],
     playersScore : [],
     isOver : false,
+    forcePlayerOrder : -1,
 }
 export const useGameStateStore = create<GameState>()((set)=> ({
     ...initialState,
@@ -51,6 +58,9 @@ export const useGameStateStore = create<GameState>()((set)=> ({
         set((state) => ({
             currentState: payload.action,
             cards: payload.cards ?? state.cards,
+            calledCards: payload.calledCards ?? state.calledCards,
+            isCallSuccess: payload.isCallSuccess ?? state.isCallSuccess,
+            forcePlayerOrder : payload.state.forcePlayerOrder ?? state.forcePlayerOrder,
             turn: payload.state?.turn ?? state.turn,
             round: payload.state?.round ?? state.round,
             roundPlayCard: payload.state?.roundPlayCard ?? state.roundPlayCard,

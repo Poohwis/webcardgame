@@ -1,9 +1,8 @@
-import { motion } from "motion/react";
 import {
-  CardAnimationMode,
   useCardAnimationStore,
 } from "../store/cardAnimationStore";
 import GameButton from "./GameButton";
+import { useGameStateStore } from "../store/gameStateStore";
 interface PlayerActionContainerProps {
   handleCallAction: () => void;
   handlePlayCardAction: () => void;
@@ -22,17 +21,11 @@ export default function PlayerActionContainer({
   lastPlayedBy,
   selectCardIndices,
 }: PlayerActionContainerProps) {
-  const { addToQueue } = useCardAnimationStore();
+  const { playCardAnimation } = useCardAnimationStore();
+  const {forcePlayerOrder} =useGameStateStore()
   const isCanThrowCard = order == turn && selectCardIndices.length > 0;
   const isCanCall = order == turn && lastPlayedBy.length !== 0;
-
-  const playCardAnimation = () => {
-    addToQueue([
-      CardAnimationMode.FlipS,
-      CardAnimationMode.PlayCard,
-      CardAnimationMode.Fan,
-    ]);
-  };
+  const isForceThrowAll = order === turn && order === forcePlayerOrder
 
   return (
     <div className="flex flex-row gap-x-4 ">
@@ -51,9 +44,9 @@ export default function PlayerActionContainer({
           handlePlayCardAction();
         }}
         isSending={isSending}
-        disabled={!isCanThrowCard}
-        title={"THROW CARD"}
-        activeColor={"bg-black"}
+        disabled={isForceThrowAll ? false : !isCanThrowCard}
+        title={isForceThrowAll ? "THROW ALL" : "THROW CARD"}
+        activeColor={"bg-lime-500"}
       />
     </div>
   );

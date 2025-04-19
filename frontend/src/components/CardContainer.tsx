@@ -5,6 +5,7 @@ import {
   useCardAnimationStore,
 } from "../store/cardAnimationStore";
 import Card, { CARD_WIDTH } from "./Card";
+import { cn } from "../utils/cn";
 
 interface CardContainerProps {
   cards: number[];
@@ -25,6 +26,8 @@ export default function CardContainer({
   const [windowWidth, setWindowWidth] = useState(0);
   const [removedCards, setRemovedCards] = useState<(number | null)[]>(cards);
   const [isCardSelectable, setIsCardSelectable] = useState(false);
+  const [isPlayable, setIsPlayable] = useState(false);
+  const [isSmallWindow, setIsSmallWindow] = useState(false);
 
   useEffect(() => {
     setRemovedCards((prev) =>
@@ -36,6 +39,11 @@ export default function CardContainer({
     const handleResize = () => {
       if (ref.current) {
         setWindowWidth(ref.current.offsetWidth);
+        if (ref.current.offsetWidth < 640) {
+          setIsSmallWindow(true);
+        } else {
+          setIsSmallWindow(false);
+        }
       }
     };
     window.addEventListener("resize", handleResize);
@@ -44,6 +52,26 @@ export default function CardContainer({
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
+  useEffect(() => {
+    const reposition = () => {
+      const remainingHand = cards.filter((card) => card !== -1);
+      const overlapOffset = isSmallWindow ? 50 : 100;
+      const handWidth =
+        remainingHand.length * CARD_WIDTH -
+        (remainingHand.length - 1) * (CARD_WIDTH - overlapOffset);
+      const centerX = windowWidth / 2 - handWidth / 2;
+
+      let count = 0;
+      for (let i = 0; i < cards.length; i++) {
+        if (cards[i] !== -1) {
+          animate(cardX[i], centerX + count * overlapOffset);
+          count++;
+        }
+      }
+    };
+    reposition();
+  }, [windowWidth]);
 
   //handle card animation
   useEffect(() => {
@@ -98,9 +126,9 @@ export default function CardContainer({
     };
 
     const cardFoldX = () => {
-      const foldedOffset = 20
+      const foldedOffset = 20;
       const remainingHand = cards.filter((card) => card !== -1);
-      const centerX = windowWidth / 2 - ((CARD_WIDTH ) + (foldedOffset * 4))/2 
+      const centerX = windowWidth / 2 - (CARD_WIDTH + foldedOffset * 4) / 2;
       let completedAnimations = 0;
       const totalToAnimate = remainingHand.length;
       for (let i = 0; i < cards.length; i++) {
@@ -122,8 +150,10 @@ export default function CardContainer({
 
     const cardFanoutX = () => {
       const remainingHand = cards.filter((card) => card !== -1);
+      const overlapOffset = isSmallWindow ? 50 : 100;
       const handWidth =
-        remainingHand.length * 120 - (remainingHand.length - 1) * (120 - 100);
+        remainingHand.length * CARD_WIDTH -
+        (remainingHand.length - 1) * (CARD_WIDTH - overlapOffset);
       const centerX = windowWidth / 2 - handWidth / 2;
 
       let count = 0;
@@ -132,7 +162,7 @@ export default function CardContainer({
 
       for (let i = 0; i < cards.length; i++) {
         if (cards[i] !== -1) {
-          animate(cardX[i], centerX + count * 100, {
+          animate(cardX[i], centerX + count * overlapOffset, {
             duration: 0.6,
             type: "spring",
             bounce: 0,
@@ -245,6 +275,14 @@ export default function CardContainer({
       case CardAnimationMode.FlipS:
         flipSelectedToBack();
         break;
+      case CardAnimationMode.ClickableOn:
+        setIsPlayable(true);
+        processNext();
+        break;
+      case CardAnimationMode.ClickableOff:
+        setIsPlayable(false);
+        processNext();
+        break;
       default:
         break;
     }
@@ -261,51 +299,22 @@ export default function CardContainer({
 
   //TODO : DELETE show/hide control panel
   const [show, setShow] = useState(false);
-  const toggleShow = () => {
-    setShow((p) => !p);
-  };
-  const [showAni, setShowAni] = useState(true);
+  const [temp, setTemp] = useState(false);
 
   return (
     <div
       ref={ref}
-      className={`flex flex-row h-[300px] bg-darkgreen w-[1000px] rounded-2xl 
-        border-lightgreen border-4
-        ${show ? "" : "overflow-hidden"}`}
+      style={{ pointerEvents: isPlayable ? "auto" : "none" }}
+      className={cn(
+        "relative flex flex-row max-h-[300px] h-[300px] max-w-[640px] w-full sm:rounded-full rounded-3xl",
+        { "overflow-hidden": !show }
+      )}
     >
-      {/* temp panel */}
-      <button
-        onClick={() => setShowAni(!showAni)}
-        className="text-sm font-pixelify absolute top-0"
-      >
-        animation control
-      </button>
-      <button
-        onClick={toggleShow}
-        className="text-sm font-pixelify absolute top-4"
-      >
-        {show ? "hide" : "show"}
-      </button>
-      <div
-        className={`absolute flex flex-col font-pixelify -mt-[350px] ${
-          showAni ? "" : "hidden"
-        }`}
-      >
-        {Object.values(CardAnimationMode).map((b) => (
-          <button
-            key={b}
-            className="text-white bg-black rounded-full mb-1 w-[100px]"
-            onClick={() => addToQueue([b])}
-          >
-            {b}
-          </button>
-        ))}
-        <div className="flex flex-row gap-x-1">
-          {queue.map((q, i) => (
-            <div key={i}>{q}</div>
-          ))}
-        </div>
-      </div>
+      <motion.div
+        className="transition-all absolute left-[50%] -translate-x-[50%] bottom-0
+       bg-darkgreen w-full h-[300px] sm:rounded-full rounded-3xl
+        border-[10px] border-lightgreen"
+      />
       <motion.div style={{ y: -300 }}>
         {cards.map((card, index) => (
           <Card
@@ -323,3 +332,41 @@ export default function CardContainer({
     </div>
   );
 }
+// const toggleShow = () => {
+//   setShow((p) => !p);
+// };
+// const [showAni, setShowAni] = useState(true);
+
+// {/* temp panel */}
+// <button
+//   onClick={() => setShowAni(!showAni)}
+//   className="text-sm font-pixelify absolute top-0"
+// >
+//   animation control
+// </button>
+// <button
+//   onClick={toggleShow}
+//   className="text-sm font-pixelify absolute top-4"
+// >
+//   {show ? "hide" : "show"}
+// </button>
+// <div
+//   className={`absolute flex flex-col font-pixelify -mt-[350px] ${
+//     showAni ? "" : "hidden"
+//   }`}
+// >
+//   {Object.values(CardAnimationMode).map((b) => (
+//     <button
+//       key={b}
+//       className="text-white bg-black rounded-full mb-1 w-[100px]"
+//       onClick={() => addToQueue([b])}
+//     >
+//       {b}
+//     </button>
+//   ))}
+//   <div className="flex flex-row gap-x-1">
+//     {queue.map((q, i) => (
+//       <div key={i}>{q}</div>
+//     ))}
+//   </div>
+// </div>

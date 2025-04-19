@@ -13,17 +13,6 @@ export default async function handleGameAction(
   const { updateGameState } = gameStateStore;
   const { addToQueue } = cardAnimationStore;
 
-  const nextRoundCardAnimations = () => {
-    addToQueue([
-      CardAnimationMode.Up,
-      CardAnimationMode.FlipToBack,
-      CardAnimationMode.Fold,
-      CardAnimationMode.Fall,
-      CardAnimationMode.Fan,
-      CardAnimationMode.FlipToFront,
-    ]);
-  };
-
   //for now bulk update the clientState for easy implement; TODO: update only the updated state
   switch (payload.action) {
     case "start":
@@ -37,7 +26,6 @@ export default async function handleGameAction(
       break;
     case "nextRound":
       updateGameState(payload);
-      nextRoundCardAnimations();
       break;
     case "nextGame":
       updateGameState(payload);

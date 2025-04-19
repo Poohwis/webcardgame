@@ -14,6 +14,8 @@ export enum CardAnimationMode {
   FlipS = "flips",
   SelectableOn = "selectableOn",
   SelectableOff = "selectableOff",
+  ClickableOn = "clickableOn",
+  ClickableOff = "clickableOff",
 }
 
 export interface CardAnimationState {
@@ -21,7 +23,9 @@ export interface CardAnimationState {
   currentMode: CardAnimationMode;
   addToQueue: (modes: CardAnimationMode[]) => void;
   processNext: () => void;
-  dealCardAnimation: ()=>void
+  dealCardAnimation: () => void;
+  playCardAnimation: () => void;
+  returnCardAnimation: () => void;
 }
 
 export const useCardAnimationStore = create<CardAnimationState>((set) => ({
@@ -44,7 +48,8 @@ export const useCardAnimationStore = create<CardAnimationState>((set) => ({
 
       return { queue: newQueue, currentMode: nextMode };
     }),
-    dealCardAnimation : ()=> set((state) => {
+  dealCardAnimation: () =>
+    set((state) => {
       state.addToQueue([
         CardAnimationMode.SelectableOff,
         CardAnimationMode.FlipToBack,
@@ -55,5 +60,25 @@ export const useCardAnimationStore = create<CardAnimationState>((set) => ({
         CardAnimationMode.SelectableOn,
       ]);
       return {};
-    })
+    }),
+  playCardAnimation: () =>
+    set((state) => {
+      state.addToQueue([
+        CardAnimationMode.FlipS,
+        CardAnimationMode.PlayCard,
+        CardAnimationMode.Fan,
+      ]);
+      return {};
+    }),
+  returnCardAnimation: () =>
+    set((state) => {
+      state.addToQueue([
+        CardAnimationMode.ClickableOff,
+        CardAnimationMode.SelectableOff,
+        CardAnimationMode.FlipToBack,
+        CardAnimationMode.Fold,
+        CardAnimationMode.Up,
+      ]);
+      return {};
+    }),
 }));
