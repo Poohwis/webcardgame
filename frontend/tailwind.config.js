@@ -12,7 +12,9 @@ export default {
         nippo : ["Nippo-Variable", "sans-serif"],
         silk : ["Silkscreen-Regular", "sans-serif"],
         silkbold : ["Silkscreen-Bold", "sans-serif"],
-        vt: ["VT323-Regular", "sans-serif"]
+        vt: ["VT323-Regular", "sans-serif"],
+        array: ["Array-Regular", "sans-serif"],
+        arraysemi: ["Array-Semibold", "sans-serif"]
       },
       colors : {
         accent : "#E5D0AC",

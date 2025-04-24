@@ -1,5 +1,5 @@
 //use different animation implement approch from card container, and i think this is easy to specify card position of many //but need manual manuver for laping of each animation (not desirable)
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useGameStateStore } from "../store/gameStateStore";
 import wait from "../utils/wait";
@@ -12,12 +12,18 @@ import { Transition } from "motion/react";
 import TableCard from "./TableCard";
 import Indicator from "./Indicator";
 import { useTableStateStore } from "../store/tableStateStore";
+import RoundPlayCardIndicator from "./RoundPlayCardIndicator";
+import { User } from "../type";
+import { PCOLOR } from "../constant";
+import PlayerTurnIndicator from "./PlayerTurnIndicator";
+import CallResultIndicator from "./CallResultIndicator";
 
 export const ONTABLECARD_WIDTH = 100;
 export const ONTABLECARD_HEIGHT = 142;
 export const TABLE_SIZE = 400;
 interface TableContainerProps {
   playerOrder: number;
+  users: User[];
   handleRequestNextTable: () => void;
 }
 export type playedCardStack = {
@@ -70,18 +76,18 @@ const tableCardAnimationVariants: Record<
   jump: { transition: { duration: 0 } },
 };
 
-
 export default function TableContainer({
   playerOrder,
+  users,
   handleRequestNextTable,
 }: TableContainerProps) {
   const cardsName = ["ACE", "JACK", "KING", "QUEEN", "JOKER"];
   const [playedCardStack, setPlayedCardStack] = useState<playedCardStack[]>([]);
   const [lastPlayOrder, setLastPlayOrder] = useState(-1);
   const [animationMode, setAnimationMode] = useState<AnimationMode>("default");
-  const {tableState, setTableState} = useTableStateStore()
+  const { tableState, setTableState } = useTableStateStore();
 
-  const { currentState, roundPlayCard, isCallSuccess, playersChance } =
+  const { currentState, roundPlayCard, isCallSuccess, playersChance, turn } =
     useGameStateStore();
   const { lastPlayedBy, lastPlayedCardCount, calledCards, cards } =
     useGameStateStore();
@@ -328,7 +334,7 @@ export default function TableContainer({
 
     //Third: Down card
     setAnimationMode("down");
-    setTableState("resultUpdate")
+    setTableState("resultUpdate");
     for (const card of calledCardStack) {
       const index = calledCardStack.findIndex((t) => t.zIndex === card.zIndex);
       const position = (calledCardStack.length - 1) / 2 - index;
@@ -690,8 +696,13 @@ export default function TableContainer({
       setPlayedCardStack((prev) =>
         prev.map((c) =>
           c.zIndex <= stackSize
-            ? { ...c, endY: ONTABLECARD_HEIGHT + 100 - c.id, isFixed : false }
-            : { ...c, endY: c.endY - stackSize, endX: c.endX - stackSize, isFixed: false }
+            ? { ...c, endY: ONTABLECARD_HEIGHT + 100 - c.id, isFixed: false }
+            : {
+                ...c,
+                endY: c.endY - stackSize,
+                endX: c.endX - stackSize,
+                isFixed: false,
+              }
         )
       );
       await wait(150);
@@ -741,29 +752,41 @@ export default function TableContainer({
     }
   }, [isSmallWindow]);
 
-  const [show, setShow] = useState(false);
   return (
     <>
       <div className="w-full h-full flex items-center justify-center relative mt-12">
-        {/* outer indicator */}
-        <Indicator
-          playerOrder={playerOrder}
-          tableSize={tableSize}
+        <RoundPlayCardIndicator
+          radius={156}
+          size={
+            tableState === "start" ||
+            tableState === "callFail" ||
+            tableState === "callSuccess"
+              ? 500
+              : 400
+          }
+          text={
+            cardsName[roundPlayCard]
+              ? cardsName[roundPlayCard] + "'S TABLE"
+              : ""
+          }
+          textColor="#065f46"
         />
+        {/* outer indicator */}
+        <Indicator playerOrder={playerOrder} tableSize={tableSize} />
         {/* table */}
         <motion.div
-          // initial={{ width: TABLE_SIZE, height: TABLE_SIZE }}
           style={{ width: tableSize, height: tableSize }}
           animate={
             tableState !== "initial"
               ? { width: tableSize + 25, height: tableSize + 25 }
               : {}
           }
-          // style={{ overflow: show ? "visible" : "hidden" }}
           className="overflow-hidden bg-transparent rounded-full relative
         flex items-center justify-center"
         >
           <div className="flex items-center justify-center bg-darkgreen rounded-full sm:w-[400px] sm:h-[400px] w-[250px] h-[250px]" />
+          <PlayerTurnIndicator users={users} />
+          <CallResultIndicator users={users} />
           {playedCardStack.map((card, index) => (
             <TableCard
               key={index}

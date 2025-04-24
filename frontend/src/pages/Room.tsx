@@ -1,4 +1,3 @@
-import { motion } from "motion/react";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import UserPanel from "../components/UserPanel";
@@ -18,6 +17,7 @@ import { useCardAnimationStore } from "../store/cardAnimationStore";
 import wait from "../utils/wait";
 import TableContainer from "../components/TableContainer";
 import UserBanner from "../components/UserBanner";
+import CallResultTextContainer from "../components/CallResultTextContainer";
 
 const initialState = {
   ws: null as WebSocket | null,
@@ -245,10 +245,12 @@ export default function RoomPage() {
           {/* TABLE */}
           <div className="flex flex-1 relative">
             <TableContainer
+              users={state.users}
               playerOrder={state.order}
               handleRequestNextTable={handleRequestNextTable}
             />
-          <UserBanner users={state.users} order={state.order}/>
+            <UserBanner users={state.users} order={state.order} />
+            <CallResultTextContainer />
           </div>
           {/* PLAYER HAND */}
           <div className="self-end items-center justify-center flex w-full">

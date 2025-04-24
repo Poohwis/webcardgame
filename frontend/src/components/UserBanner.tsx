@@ -7,6 +7,7 @@ import { cn } from "../utils/cn";
 import chroma from "chroma-js";
 import React, { useEffect, useRef, useState } from "react";
 import { useTableStateStore } from "../store/tableStateStore";
+import RoundPlayCardIndicator from "./RoundPlayCardIndicator";
 
 interface UserBannerProps {
   users: User[];
@@ -56,7 +57,7 @@ export default function UserBanner({
 
   return (
     <>
-      <div className="absolute top-0 left-[50%] font-pixelify text-darkgreen -translate-x-[50%]">
+      <div className="absolute top-0 left-[50%] font-silk text-darkgreen -translate-x-[50%]">
         tableState: {tableState}
       </div>
       <div className="absolute top-4 left-[50%] font-pixelify -translate-x-[50%]">
@@ -188,12 +189,13 @@ const SelfBanner = ({
           />
           <motion.img
             src={c}
-            initial={{ opacity: 0 }}
+            initial={{ opacity: 0, rotateZ: 40 }}
             animate={
               isLeading
-                ? { opacity: 1, x: 0, y: 0, rotateZ: 40 }
-                : { opacity: 0, x: 10, y: -10, rotateZ: 40 }
+                ? { opacity: 1, x: 0, y: 0 }
+                : { opacity: 0, x: 10, y: -10 }
             }
+            transition={{ delay: 4 }}
             alt="crown"
             className="z-50 absolute w-[22px] h-[22px] -top-3 -right-2"
           />
@@ -299,7 +301,7 @@ const SmallBanner = ({
                 rotateZ: isLeftSide ? 40 : -40,
               }
         }
-        transition={{ delay: 1 }}
+        transition={{ delay: 4 }}
         className={cn(
           " z-50 w-[22px] h-[22px] flex items-center justify-center absolute -top-3",
           isLeftSide ? " left-9 rotate-[40deg]" : "-right-3 -rotate-[40deg]"
@@ -418,7 +420,7 @@ const LargeBanner = ({
               ? { opacity: 1, x: 0, y: 0, rotateZ: 40 }
               : { opacity: 0, x: 10, y: -10, rotateZ: 40 }
           }
-          transition={{ delay: 1 }}
+          transition={{ delay: 4 }}
           className="z-50 absolute w-[22px] h-[22px] -top-3 -right-2 rotate-[40deg]"
         />
         {/* Banner */}
@@ -553,8 +555,7 @@ const ResultPopup = ({
     <motion.div
       style={position}
       initial={{ opacity: 0, y: 15 }}
-      animate={isShow ? { opacity: 1, y: 0 } : { opacity: 1, y: 15 }}
-      whileHover={{ y: 0 }}
+      animate={isShow ? { opacity: 1, y: 0 } : { opacity: 0, y: 15 }}
       className={cn(
         "z-50 hover:cursor-default absolute w-6 h-6 bg-transparent",
         " text-3xl font-pixelify flex flex-col items-center justify-center -space-y-1 right-10",

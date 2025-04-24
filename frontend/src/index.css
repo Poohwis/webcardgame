@@ -23,6 +23,14 @@
   font-family: "VT323-Regular";
   src : url("../src/assets/fonts/VT323-Regular.ttf")
 }
+@font-face {
+  font-family: "Array-Regular";
+  src : url("../src/assets/fonts/Array-Regular.otf")
+}
+@font-face {
+  font-family: "Array-Semibold";
+  src : url("../src/assets/fonts/Array-Semibold.otf")
+}
 /* Minimal Scrollbar */
 .scrollbar::-webkit-scrollbar {
   width: 4px; /* Thin scrollbar */

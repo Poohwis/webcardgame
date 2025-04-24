@@ -315,6 +315,7 @@ func handleGameIncomingMessage(room *Room, message Message) {
 		sendToAll(room, "game", map[string]interface{}{
 			"action": "playCard", "state": room.ClientGameState,
 		})
+
 	case "call":
 		lastPlayOrder := room.ClientGameState.LastPlayedBy
 
@@ -330,6 +331,7 @@ func handleGameIncomingMessage(room *Room, message Message) {
 			"state":         room.ClientGameState,
 			"calledCards":   room.ServerGameState.OnTableCard,
 			"isCallSuccess": isCallSuccess,
+			// "callerAndCalled": []int{message.SenderSlot, lastPlayOrder[len(lastPlayOrder)-1]},
 		})
 
 	case "s":

@@ -195,7 +195,6 @@ func (c *ClientGameState) CallCheck(s *ServerGameState, callerOrder int, calledO
 
 	c.checkIsGameEnd()
 	return c.IsOver, isCallSuccess
-	// return c.IsOver
 }
 
 func (c *ClientGameState) isOnlyOnePlayerWithHand() (bool, int) {
