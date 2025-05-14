@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import { useTableStateStore } from "../store/tableStateStore";
+import { cn } from "../utils/cn";
 interface RoundPlayCardIndicator {
   radius: number;
   size: number;
@@ -7,19 +8,22 @@ interface RoundPlayCardIndicator {
   textColor: string;
   className?: string;
   reversed?: boolean;
+  isShow: boolean;
+  isSmallWindow: boolean;
 }
 
-export default function RoundPlayCardIndicator({
+export default function PlayCardRingIndicator({
   radius,
   size,
   text,
   textColor,
   className = "",
   reversed = false,
+  isShow,
+  isSmallWindow,
 }: RoundPlayCardIndicator) {
-  // const width = size;
-  //   const width = 300;
-  const centerX = size / 2;
+  const ringSize = isShow ? size * (isSmallWindow ? 1.36 : 1.25) : size;
+  const centerX = ringSize / 2;
   const chordLength = 280;
   const startX = centerX - chordLength / 2;
   const endX = centerX + chordLength / 2;
@@ -40,23 +44,31 @@ export default function RoundPlayCardIndicator({
 
   return (
     <motion.svg
-      className={` absolute rounded-full top-18 font-silk ${className}`}
+      className={cn(
+        `absolute rounded-full font-silk ${className} transition-colors duration-500`,
+          tableState=== "initial" || tableState === "boardSetupOne" || tableState === "boardSetupTwo" ? "hidden" : "visible"
+      )}
       animate={{
-        width: size,
-        height: size,
+        width: ringSize,
+        height: ringSize,
         rotateZ:
           tableState === "resultUpdate"
-           ? (reversed ? 270 : 90) : reversed ? 225 : 45,
+            ? reversed
+              ? 270
+              : 90
+            : reversed
+            ? 225
+            : 45,
       }}
       transition={
         tableState === "resultUpdate" ? {} : { delay: 0.5, type: "spring" }
       }
-      viewBox={`0 ${reversed ? 95 : 75} ${size} ${size}`}
+      viewBox={`0 ${reversed ? 95 : 75} ${ringSize} ${ringSize}`}
     >
       <defs>
         <path id={text} d={d} fill="transparent" />
       </defs>
-      <text fontSize={24} fill={textColor}>
+      <text fontSize={isSmallWindow ? 20 : 24} fill={textColor}>
         <textPath href={`#${text}`} startOffset="50%" textAnchor="middle">
           {text}
         </textPath>

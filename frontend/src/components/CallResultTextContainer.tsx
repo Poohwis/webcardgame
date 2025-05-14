@@ -88,12 +88,12 @@ const ResultText = ({
   return (
     <div
       style={{
-        WebkitTextStroke: `2px #fef9e1`,
+        WebkitTextStroke: `4px white`,
         color,
         top: topPosition,
       }}
       className="z-[100] absolute left-[50%] -translate-x-[50%]
-        font-nippo font-extrabold sm:text-[100px] text-3xl text-nowrap hover:cursor-default"
+        font-nippo font-extrabold sm:text-[100px] text-6xl text-nowrap hover:cursor-default"
     >
       <WaveTextWrapper textTrigger={textTrigger} onWaveEnd={onWaveEnd}>
         {text}

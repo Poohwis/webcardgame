@@ -1,9 +1,11 @@
 import { create } from "zustand";
 
-export type RingMode = "initial" | "start";
-export type PointerMode = "initial" | "pointing";
+export type RingMode = "initial" | "start" | "boardSetupTwo"  ;
+export type PointerMode = "initial" | "pointing" ;
 export type TableState =
   | "initial"
+  | "boardSetupOne"
+  | "boardSetupTwo"
   | "start"
   | "turn"
   | "callSuccess"

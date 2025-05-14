@@ -1,13 +1,12 @@
 import { useGameStateStore } from "../store/gameStateStore";
 import { PCOLOR } from "../constant";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import c from "../../src/assets/svg/c.png";
 import { User } from "../type";
 import { cn } from "../utils/cn";
 import chroma from "chroma-js";
 import React, { useEffect, useRef, useState } from "react";
 import { useTableStateStore } from "../store/tableStateStore";
-import RoundPlayCardIndicator from "./RoundPlayCardIndicator";
 
 interface UserBannerProps {
   users: User[];
@@ -29,9 +28,10 @@ export default function UserBanner({
   users,
   order: selfOrder,
 }: UserBannerProps) {
-  const { playersHandCount, playersScore, playersChance, turn, currentState } =
+  const { playersHandCount, playersScore, playersChance, turn } =
     useGameStateStore();
-  const { tableState, pointerState } = useTableStateStore();
+  const { pointerState } = useTableStateStore();
+  const {tableState} =useTableStateStore()
 
   //position of banner show->left top right
   const largeBannerPosition = {
@@ -57,16 +57,10 @@ export default function UserBanner({
 
   return (
     <>
-      <div className="absolute top-0 left-[50%] font-silk text-darkgreen -translate-x-[50%]">
-        tableState: {tableState}
-      </div>
-      <div className="absolute top-4 left-[50%] font-pixelify -translate-x-[50%]">
-        currentState: {currentState}
-      </div>
       {users.map((user) => {
         const povSlot = ((user.order - selfOrder + 4) % 4) as 1 | 2 | 3 | 0;
         const userIndex = user.order - 1;
-        const isBannerShow = currentState === "start";
+        const isBannerShow = tableState === "boardSetupTwo";
         if (povSlot === 0)
           return (
             <div key={user.order}>
@@ -199,9 +193,15 @@ const SelfBanner = ({
             alt="crown"
             className="z-50 absolute w-[22px] h-[22px] -top-3 -right-2"
           />
-          <div
-            style={{ backgroundColor: PCOLOR[playerOrder - 1] }}
-            className="z-30 w-full h-full px-3 py-1  rounded-t-lg"
+          <motion.div
+            animate={{
+              backgroundColor:
+                chance === 0
+                  ? chroma.mix(PCOLOR[playerOrder - 1], "gray", 0.8).hex()
+                  : PCOLOR[playerOrder - 1],
+            }}
+            transition={chance === 0 ? { delay: 4 } : {}}
+            className="z-30 w-full h-full px-3 py-1 rounded-t-lg transition-colors"
           >
             <div className="flex flex-row justify-between sm:text-sm text-[12px] text-white/80 w-full">
               <div>CHANCE</div>
@@ -210,10 +210,20 @@ const SelfBanner = ({
             <div className="flex flex-row sm:text-sm text-[12px] justify-between items-center w-full">
               <ChanceBox type={"large"} chance={animatedChance} />
               <div className=" bg-white/80 text-gray-600 w-4 h-4 text-center rounded-full flex items-center justify-center">
-                {animatedScore}
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={playerOrder + animatedScore}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -20, opacity: 0 }}
+                    transition={{ type: "spring", duration: 0.3 }}
+                  >
+                    {animatedScore}
+                  </motion.span>
+                </AnimatePresence>
               </div>
             </div>
-          </div>
+          </motion.div>
         </motion.div>
       </div>
     </>
@@ -309,12 +319,18 @@ const SmallBanner = ({
       >
         <motion.img src={c} alt="crown" className="w-[22px] h-[22px]" />
       </motion.div>
-      <div
+      <motion.div
         style={{
           width: width,
           height: height,
-          backgroundColor: PCOLOR[playerOrder - 1],
         }}
+        animate={{
+          backgroundColor:
+            chance === 0
+              ? chroma.mix(PCOLOR[playerOrder - 1], "gray", 0.8).hex()
+              : PCOLOR[playerOrder - 1],
+        }}
+        transition={chance === 0 ? { delay: 4 } : {}}
         className={cn(
           "z-30 absolute flex flex-col items-center font-pixelify overflow-hidden text-white/80",
           isLeftSide ? "rounded-r-lg" : "rounded-l-lg"
@@ -328,24 +344,27 @@ const SmallBanner = ({
         <div className="flex flex-col items-center text-[12px] rounded-lg mt-1 px-1">
           <div>SCORE</div>
           <div className="text-gray-600 w-3 h-3 rounded-full flex items-center justify-center bg-white/80 ">
-            {animatedScore}
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={playerOrder + animatedScore}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -20, opacity: 0 }}
+                transition={{ type: "spring", duration: 0.3 }}
+              >
+                {animatedScore}
+              </motion.span>
+            </AnimatePresence>
           </div>
         </div>
-      </div>
+      </motion.div>
       <div
         className={cn(
           "z-50 flex flex-col items-center justify-center absolute -bottom-[180px] w-[100px] h-[68px] overflow-hidden",
           isLeftSide ? "rotate-90 -right-16" : "-rotate-90 -left-4"
         )}
       >
-        {tableState === "start" &&
-          Array.from({ length: 5 }).map((_, index) => (
-            <MiniCard
-              key={index}
-              index={index}
-              remain={typeof remainCard === "undefined" ? 0 : remainCard}
-            />
-          ))}
+        <MiniCardContainer remainCard={remainCard} />
       </div>
     </motion.div>
   );
@@ -390,8 +409,11 @@ const LargeBanner = ({
       />
       <motion.div
         style={position}
-        initial={{ opacity: 0, y: 10 }}
-        animate={isBannerShow && { opacity: 1, y: 0 }}
+        initial={{scale : 0}}
+        animate={isBannerShow && {scale : 1}}
+        transition={{delay : 0.15 * playerOrder}}
+        // initial={{ opacity: 0, y: 10 }}
+        // animate={isBannerShow && { opacity: 1, y: 0 }}
         className="absolute"
       >
         <motion.div
@@ -424,12 +446,18 @@ const LargeBanner = ({
           className="z-50 absolute w-[22px] h-[22px] -top-3 -right-2 rotate-[40deg]"
         />
         {/* Banner */}
-        <div
+        <motion.div
           style={{
-            background: PCOLOR[playerOrder - 1],
             width,
             height,
           }}
+          animate={{
+            backgroundColor:
+              chance === 0
+                ? chroma.mix(PCOLOR[playerOrder - 1], "gray", 0.8).hex()
+                : PCOLOR[playerOrder - 1],
+          }}
+          transition={chance === 0 ? { delay: 4 } : {}}
           className="z-20 relative flex flex-col rounded-lg px-3 py-1 items-start justify-start font-pixelify"
         >
           <div className="text-white">{playerName}</div>
@@ -440,23 +468,40 @@ const LargeBanner = ({
           <div className="flex flex-row sm:text-sm text-[12px] justify-between items-center w-full">
             <ChanceBox type={"large"} chance={animatedChance} />
             <div className=" bg-white/80 text-gray-600 w-4 h-4 text-center rounded-full flex items-center justify-center">
-              {animatedScore}
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={playerOrder + animatedScore}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ type: "spring", duration: 0.3 }}
+                >
+                  {animatedScore}
+                </motion.span>
+              </AnimatePresence>
             </div>
           </div>
-        </div>
+        </motion.div>
         {/* Card remain */}
         <div className="z-50 absolute w-[100px] h-[50px]  left-[50%] -translate-x-[50%] -bottom-6 flex overflow-hidden border-[0px] items-center justify-center">
-          {tableState === "start" &&
-            Array.from({ length: 5 }).map((_, index) => (
-              <MiniCard
-                key={index}
-                index={index}
-                remain={typeof remainCard === "undefined" ? 0 : remainCard}
-              />
-            ))}
+          <MiniCardContainer remainCard={remainCard} />
         </div>
       </motion.div>
     </div>
+  );
+};
+
+const MiniCardContainer = ({ remainCard }: { remainCard: number }) => {
+  return (
+    <>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <MiniCard
+          key={index}
+          index={index}
+          remain={typeof remainCard === "undefined" ? 0 : remainCard}
+        />
+      ))}
+    </>
   );
 };
 
@@ -469,13 +514,26 @@ const MiniCard = ({ index, remain }: { index: number; remain: number }) => {
   const totalWidth = (remain - 1) * (cardWidth + spacing); // Total width occupied
   const startX = -totalWidth / 2; // Start from the negative half
   const isPlayed = remain - 1 >= index;
+  const { tableState } = useTableStateStore();
+  const isCardShow =
+    tableState === "start" ||
+    tableState === "callFail" ||
+    tableState === "callSuccess" ||
+    tableState === "resultUpdate";
   return (
     <motion.div
-      animate={{
-        x: startX + (cardWidth + spacing) * index, // Centered X calculation
-        y: isPlayed ? a * Math.pow(position, 2) : -70,
-        rotateZ: position * 10,
-      }}
+      animate={
+        isCardShow
+          ? {
+              x: startX + (cardWidth + spacing) * index, // Centered X calculation
+              y: isPlayed ? a * Math.pow(position, 2) : -70,
+              rotateZ: position * 10,
+              opacity: 1,
+              scale: 1,
+            }
+          : { y: -70, scale: 0 }
+      }
+      whileHover={{ y: -0.2 }}
       className="cursor-default absolute w-[24px] h-[34px] bg-white rounded-sm p-[2px]"
     >
       <div className="bg-red-800 w-full h-full" />
@@ -490,23 +548,26 @@ const ChanceBox = ({
   type: "large" | "small";
   chance: number;
 }) => {
-  if (type === "small") {
-    return (
-      <div className="flex flex-row space-x-1">
+  return (
+    <div className="flex flex-row space-x-1 h-1 sm:h-auto">
+      <AnimatePresence mode="popLayout">
         {Array.from({ length: chance }).map((_, index) => (
-          <div key={index} className="w-1 h-1 bg-white/70" />
+          <motion.div
+            layout
+            key={index}
+            initial={{ scale: 5, rotateZ: -90, opacity: 0 }}
+            animate={{ scale: 1, rotateZ: 0, opacity: 1 }}
+            exit={{ scale: 5, opacity: 0 }}
+            className={
+              type === "small"
+                ? "w-1 h-1 bg-white/70"
+                : "w-[6px] h-[6px] bg-white/70"
+            }
+          />
         ))}
-      </div>
-    );
-  } else {
-    return (
-      <div className="flex flex-row space-x-1">
-        {Array.from({ length: chance }).map((_, index) => (
-          <div key={index} className="w-[6px] h-[6px] bg-white/70" />
-        ))}
-      </div>
-    );
-  }
+      </AnimatePresence>
+    </div>
+  );
 };
 
 const ResultPopup = ({

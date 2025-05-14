@@ -31,7 +31,8 @@ export default function UserPanel({
         handleSendNameChange={handleSendNameChange}
       />
       <UserList users={users} />
-      <UserStatusButton users={users} ws={ws}  />
+      <div className="flex flex-1"></div>
+      {/* <UserStatusButton users={users} ws={ws}  /> */}
     </div>
   );
 }

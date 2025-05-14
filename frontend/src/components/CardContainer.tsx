@@ -1,4 +1,4 @@
-import { animate, motion, useMotionValue } from "motion/react";
+import { animate, AnimatePresence, motion, useMotionValue } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import {
   CardAnimationMode,
@@ -6,6 +6,8 @@ import {
 } from "../store/cardAnimationStore";
 import Card, { CARD_WIDTH } from "./Card";
 import { cn } from "../utils/cn";
+import { AnnounceMessages, useAnnounceStore } from "../store/announceStore";
+import { useTableStateStore } from "../store/tableStateStore";
 
 interface CardContainerProps {
   cards: number[];
@@ -18,20 +20,22 @@ export default function CardContainer({
   selectCardIndices,
   handleSelectCard,
 }: CardContainerProps) {
-  const { currentMode, processNext, queue, addToQueue } =
-    useCardAnimationStore();
+  const { currentMode, processNext } = useCardAnimationStore();
   const cardX = Array.from({ length: 5 }, () => useMotionValue(0));
   const cardY = Array.from({ length: 5 }, () => useMotionValue(0));
   const ref = useRef<HTMLDivElement>(null);
   const [windowWidth, setWindowWidth] = useState(0);
-  const [removedCards, setRemovedCards] = useState<(number | null)[]>(cards);
+  const [memoCards, setMemoCards] = useState<number[]>(cards);
   const [isCardSelectable, setIsCardSelectable] = useState(false);
   const [isPlayable, setIsPlayable] = useState(false);
   const [isSmallWindow, setIsSmallWindow] = useState(false);
+  const { tableState } = useTableStateStore();
 
   useEffect(() => {
-    setRemovedCards((prev) =>
-      cards.map((card, index) => (card !== -1 ? card : prev[index]))
+    setMemoCards((prev) =>
+      cards.map((card, index) => {
+        return card !== -1 ? card : prev[index];
+      })
     );
   }, [cards]);
 
@@ -297,39 +301,64 @@ export default function CardContainer({
   const flip = Array.from({ length: 5 }, () => true);
   const [flippedCards, setFlippedCards] = useState<boolean[]>(flip);
 
-  //TODO : DELETE show/hide control panel
-  const [show, setShow] = useState(false);
-  const [temp, setTemp] = useState(false);
+  const { announceState, resetAnnounce } = useAnnounceStore();
+
+  useEffect(() => {
+    if (announceState) {
+      const timeout = setTimeout(() => {
+        resetAnnounce();
+      }, 2000); // 2 seconds
+
+      return () => clearTimeout(timeout);
+    }
+  }, [announceState]);
 
   return (
-    <div
-      ref={ref}
-      style={{ pointerEvents: isPlayable ? "auto" : "none" }}
-      className={cn(
-        "relative flex flex-row max-h-[300px] h-[300px] max-w-[640px] w-full sm:rounded-full rounded-3xl",
-        { "overflow-hidden": !show }
-      )}
-    >
-      <motion.div
-        className="transition-all absolute left-[50%] -translate-x-[50%] bottom-0
-       bg-darkgreen w-full h-[300px] sm:rounded-full rounded-3xl
-        border-[10px] border-lightgreen"
-      />
-      <motion.div style={{ y: -300 }}>
-        {cards.map((card, index) => (
-          <Card
-            key={index}
-            cardX={cardX[index]}
-            cardY={cardY[index]}
-            index={index}
-            handleSelectCard={handleSelectCard}
-            isFlipped={flippedCards[index]}
-            card={card}
-            removedCard={removedCards[index] || null}
-          />
-        ))}
-      </motion.div>
-    </div>
+    <>
+      <div
+        ref={ref}
+        style={{ pointerEvents: isPlayable ? "auto" : "none" }}
+        className={cn(
+          "overflow-hidden relative items-center flex flex-row max-h-[300px] h-[300px] max-w-[640px] w-full sm:rounded-full rounded-3xl bg--500"
+        )}
+      >
+        <motion.div
+          initial={{ width: 0, height: 0 }}
+          animate={
+            tableState === "boardSetupOne" && { width: "100%", height: 300, borderWidth : 10 }
+          }
+          className="absolute left-[50%] -translate-x-[50%] 
+       bg-darkgreen  sm:rounded-full rounded-3xl border-lightgreen "
+        />
+        <AnimatePresence mode="wait">
+          {announceState && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, left: "50%", translateX: "-50%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="absolute  bottom-8
+       font-pixelify text-sm px-1 text-white/80 rounded-full text-nowrap"
+            >
+              {AnnounceMessages[announceState]}
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <motion.div style={{ y: -450 }}>
+          {cards.map((card, index) => (
+            <Card
+              key={index}
+              cardX={cardX[index]}
+              cardY={cardY[index]}
+              index={index}
+              handleSelectCard={handleSelectCard}
+              isFlipped={flippedCards[index]}
+              card={card}
+              memoCard={memoCards[index]}
+            />
+          ))}
+        </motion.div>
+      </div>
+    </>
   );
 }
 // const toggleShow = () => {

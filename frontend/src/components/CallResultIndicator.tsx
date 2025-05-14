@@ -6,54 +6,81 @@ import { User } from "../type";
 
 interface CallResultIndicatorProps {
   users: User[];
+  isSmallWindow: boolean;
 }
 export default function CallResultIndicator({
   users,
+  isSmallWindow,
 }: CallResultIndicatorProps) {
   const { lastPlayedBy, isCallSuccess, turn } = useGameStateStore();
   const { tableState } = useTableStateStore();
+  const callerName = users[lastPlayedBy.slice(-1)[0] - 1]
+    ? users[turn - 1].displayName.length > 10
+      ? users[turn - 1].displayName.slice(0, 9) + "..."
+      : users[turn - 1].displayName
+    : "";
+  const calledName = users[lastPlayedBy.slice(-1)[0] - 1]
+    ? users[lastPlayedBy.slice(-1)[0] - 1].displayName.length > 10
+      ? users[lastPlayedBy.slice(-1)[0] - 1].displayName.slice(0, 9) + "..."
+      : users[lastPlayedBy.slice(-1)[0] - 1].displayName
+    : "";
   return (
-    <AnimatePresence mode="wait">
-      {tableState === "resultUpdate" &&
-        users[lastPlayedBy.slice(-1)[0] - 1] && (
-          <motion.div
-            style={{ left: "50%", translateX: "-50%" }}
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute bottom-10 whitespace-pre-line text-white/80 text-center font-pixelify"
-          >
-            {isCallSuccess ? (
-              <div className="inline-flex flex-col items-center text-center">
-                <span style={{ color: PCOLOR[turn - 1] }}>
-                  {users[turn - 1].displayName + "'s "}
-                  <span className="text-white/80">call on</span>
-                </span>
-                <span style={{ color: PCOLOR[lastPlayedBy.slice(-1)[0] - 1] }}>
-                  {users[lastPlayedBy.slice(-1)[0] - 1].displayName + `\n`}
-                </span>
-                <div className="px-2 bg-lime-500 rounded-full text-lime-200 ">
-                  successfull !
+    <div>
+      <AnimatePresence mode="wait">
+        {tableState === "resultUpdate" &&
+          users[lastPlayedBy.slice(-1)[0] - 1] && (
+            <motion.div
+              style={
+                isSmallWindow
+                  ? { right: 0, translateY: 127 }
+                  : { left: "50%", translateX: "-50%" }
+              }
+              initial={
+                isSmallWindow ? { opacity: 0, x: 200 } : { opacity: 0, y: 10 }
+              }
+              whileInView={
+                isSmallWindow ? { opacity: 1, x: 0 } : { opacity: 1, y: 0 }
+              }
+              exit={
+                isSmallWindow ? { opacity: 0, x: 200 } : { opacity: 0, y: -10 }
+              }
+              className="sm:absolute sm:bottom-10 bottom-auto text-nowrap fixed whitespace-pre-line font-semibold text-white/80 text-center
+            font-pixelify"
+            >
+              {isCallSuccess ? (
+                <div className="inline-flex sm:flex-col flex-row items-center text-center sm:bg-transparent bg-gray-700 px-2 rounded-l-full sm:space-x-0 space-x-1">
+                  <span style={{ color: PCOLOR[turn - 1] }}>
+                    {callerName + "'s "}
+                    <span className="text-white/80">call on</span>
+                  </span>
+                  <span
+                    style={{ color: PCOLOR[lastPlayedBy.slice(-1)[0] - 1] }}
+                  >
+                    {calledName + `\n`}
+                  </span>
+                  <div className="pl-2 pr-1 sm:bg-lime-500 bg-transparent sm:text-white/80 text-lime-500 rounded-full">
+                    successfull
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="inline-flex flex-col items-center text-center">
-                <span style={{ color: PCOLOR[turn - 1] }}>
-                  {users[turn - 1].displayName + "'s "}
-                  <span className="text-white">call on</span>
-                </span>
-                <span style={{ color: PCOLOR[lastPlayedBy.slice(-1)[0] - 1] }}>
-                  {users[lastPlayedBy.slice(-1)[0] - 1].displayName + `\n`}
-                </span>
-                <div className="px-2 bg-rose-500 rounded-full text-rose-200">
-                  failed !
+              ) : (
+                <div className="inline-flex sm:flex-col flex-row items-center text-center sm:bg-transparent bg-gray-700 px-2 rounded-l-full sm:space-x-0 space-x-1">
+                  <span style={{ color: PCOLOR[turn - 1] }}>
+                    {callerName + "'s "}
+                    <span className="text-white">call on</span>
+                  </span>
+                  <span
+                    style={{ color: PCOLOR[lastPlayedBy.slice(-1)[0] - 1] }}
+                  >
+                    {calledName + `\n`}
+                  </span>
+                  <div className="pl-2 pr-1 sm:bg-rose-500 bg-transparent sm:text-white/80 text-rose-500  rounded-full ">
+                    failed
+                  </div>
                 </div>
-              </div>
-            )}
-            {/* {`Player1\nsuccessfully called\nPlayer2 !`}
-            {`Player1's call on\nPlayer2\n failed.`}  */}
-          </motion.div>
-        )}
-    </AnimatePresence>
+              )}
+            </motion.div>
+          )}
+      </AnimatePresence>
+    </div>
   );
 }

@@ -14,7 +14,8 @@ type ServerGameState struct {
 }
 
 type ClientGameState struct {
-	Turn                int   `json:"turn"`          //1-based index, represent the current player's turn
+	Turn                int   `json:"turn"` //1-based index, represent the current player's turn
+	GameNumber          int   `json:"gameNumber"`
 	Round               int   `json:"round"`         //1-based index
 	RoundPlayCard       int   `json:"roundPlayCard"` //0-based index
 	PlayersChance       []int `json:"playersChance"`
@@ -31,6 +32,7 @@ type ClientGameState struct {
 func NewGameState(numPlayers int) (*ClientGameState, *ServerGameState) {
 	c := &ClientGameState{
 		Turn:                1,
+		GameNumber:          1,
 		Round:               1,
 		RoundPlayCard:       -1,
 		Playerscore:         make([]int, numPlayers),
@@ -59,7 +61,8 @@ func NewGameState(numPlayers int) (*ClientGameState, *ServerGameState) {
 // TODO: Make it start at next player
 func (c *ClientGameState) NextGame(s *ServerGameState) {
 	c.mu.Lock()
-	c.Turn = 1
+	c.GameNumber++
+	c.Turn = ((c.GameNumber - 1) % len(c.PlayersHandCount)) + 1
 	c.Round = 1
 	c.PlayersHandCount = make([]int, len(c.PlayersHandCount))
 	c.PlayersChance = make([]int, len(c.PlayersHandCount))

@@ -37,6 +37,10 @@ export default function PlayerActionContainer({
         disabled={!isCanCall}
         title={"CALL LIAR!"}
         activeColor={"bg-deepred"}
+        type="call"
+        turn ={turn}
+        order={order}
+        showDelaySecond={0.2}
       />
       <GameButton
         onClick={() => {
@@ -47,6 +51,10 @@ export default function PlayerActionContainer({
         disabled={isForceThrowAll ? false : !isCanThrowCard}
         title={isForceThrowAll ? "THROW ALL" : "THROW CARD"}
         activeColor={"bg-lime-500"}
+        type="throw"
+        turn={turn}
+        order={order}
+        showDelaySecond={0.4}
       />
     </div>
   );

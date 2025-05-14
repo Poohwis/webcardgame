@@ -1,5 +1,5 @@
 //use different animation implement approch from card container, and i think this is easy to specify card position of many //but need manual manuver for laping of each animation (not desirable)
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useGameStateStore } from "../store/gameStateStore";
 import wait from "../utils/wait";
@@ -12,11 +12,13 @@ import { Transition } from "motion/react";
 import TableCard from "./TableCard";
 import Indicator from "./Indicator";
 import { useTableStateStore } from "../store/tableStateStore";
-import RoundPlayCardIndicator from "./RoundPlayCardIndicator";
+import PlayCardRingIndicator from "./PlayCardRingIndicator";
 import { User } from "../type";
-import { PCOLOR } from "../constant";
 import PlayerTurnIndicator from "./PlayerTurnIndicator";
 import CallResultIndicator from "./CallResultIndicator";
+import RoundPlayedCardIndicator from "./RoundPlayedCardIndicator";
+import { cn } from "../utils/cn";
+import ResultRippleContainer from "./ResultRippleContainer";
 
 export const ONTABLECARD_WIDTH = 100;
 export const ONTABLECARD_HEIGHT = 142;
@@ -123,16 +125,14 @@ export default function TableContainer({
     };
     switch (currentState) {
       case "start":
+        setTableState("boardSetupOne");
         if (tableState !== "initial") return;
         addToTableQueue(tableStartAnimation);
         break;
       case "toNextRound":
         const nextRoundCallResult = isCallSuccess ? "callSuccess" : "callFail";
-        if (nextRoundCallResult === "callSuccess") {
-          callAction();
-        } else {
-          callAction();
-        }
+        callAction();
+        setLastPlayOrder(-1);
         setTableState(nextRoundCallResult);
         break;
       case "nextRound":
@@ -151,11 +151,8 @@ export default function TableContainer({
         break;
       case "toNextGame":
         const nextGameCallResult = isCallSuccess ? "callSuccess" : "callFail";
-        if (nextGameCallResult === "callSuccess") {
-          callAction();
-        } else {
-          callAction();
-        }
+        callAction();
+        setLastPlayOrder(-1);
         setTableState(nextGameCallResult);
         break;
     }
@@ -752,45 +749,84 @@ export default function TableContainer({
     }
   }, [isSmallWindow]);
 
+  // const ring = PCOLOR.map((color)=> chroma.mix(color, "white", 0.8).hex()).map((hex)=> `bg-[${hex}]`)
+  const outerRingColor = [
+    "bg-[#c6ded7]",
+    "bg-[#f6ccd1]",
+    "bg-[#cdd5e8]",
+    "bg-[#ebd5e4]",
+  ];
+  const tableStarted =
+    tableState === "start" ||
+    tableState === "callFail" ||
+    tableState === "callSuccess";
   return (
     <>
       <div className="w-full h-full flex items-center justify-center relative mt-12">
-        <RoundPlayCardIndicator
+        <ResultRippleContainer
+          width={isSmallWindow ? 250 : 400}
+          height={isSmallWindow ? 250 : 400}
+        />
+        <PlayCardRingIndicator
           radius={156}
-          size={
-            tableState === "start" ||
-            tableState === "callFail" ||
-            tableState === "callSuccess"
-              ? 500
-              : 400
-          }
+          size={isSmallWindow ? 250 : 400}
+          isSmallWindow={isSmallWindow}
           text={
             cardsName[roundPlayCard]
               ? cardsName[roundPlayCard] + "'S TABLE"
               : ""
           }
-          textColor="#065f46"
+          isShow={tableStarted}
+          textColor="#374151"
+          className={cn(`${outerRingColor[turn - 1]}`)}
         />
         {/* outer indicator */}
         <Indicator playerOrder={playerOrder} tableSize={tableSize} />
         {/* table */}
         <motion.div
-          style={{ width: tableSize, height: tableSize }}
+          initial={{ width: tableSize, height: tableSize }}
           animate={
-            tableState !== "initial"
-              ? { width: tableSize + 25, height: tableSize + 25 }
-              : {}
+            tableState === "boardSetupOne"
+              ? { width: tableSize + 50, height: tableSize + 50 }
+              : tableState === "boardSetupTwo"
+              ? { width: tableSize, height: tableSize }
+              : { width: tableSize + 25, height: tableSize + 25 }
           }
           className="overflow-hidden bg-transparent rounded-full relative
         flex items-center justify-center"
         >
-          <div className="flex items-center justify-center bg-darkgreen rounded-full sm:w-[400px] sm:h-[400px] w-[250px] h-[250px]" />
-          <PlayerTurnIndicator users={users} />
-          <CallResultIndicator users={users} />
+          {/* container */}
+          <motion.div
+            // style={{width : tableSize, height : tableSize}}
+            initial={{ width: 0, height: 0 }}
+            animate={
+              tableState === "boardSetupOne"
+                ? {
+                    width: tableSize,
+                    height: tableSize,
+                  }
+                : tableState !== "initial"
+                ? { width: tableSize, height: tableSize }
+                : {}
+            }
+            transition={{ type: "spring", bounce: 0.25 }}
+            onAnimationComplete={() => {
+              if (tableState === "boardSetupOne") {
+                return setTableState("boardSetupTwo");
+              }
+            }}
+            className="flex items-center justify-center bg-darkgreen rounded-full"
+          />
+          <PlayerTurnIndicator users={users} isSmallWindow={isSmallWindow} />
+          <RoundPlayedCardIndicator
+            users={users}
+            isSmallWindow={isSmallWindow}
+          />
+          <CallResultIndicator users={users} isSmallWindow={isSmallWindow} />
           {playedCardStack.map((card, index) => (
             <TableCard
               key={index}
-              card={card}
+              cardName={card}
               isSmallWindow={isSmallWindow}
               transition={tableCardAnimationVariants[animationMode].transition}
             />

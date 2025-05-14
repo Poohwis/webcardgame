@@ -8,7 +8,11 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import wait from "../utils/wait";
 import { useGameStateStore } from "../store/gameStateStore";
-import { PointerMode, RingMode, useTableStateStore } from "../store/tableStateStore";
+import {
+  PointerMode,
+  RingMode,
+  useTableStateStore,
+} from "../store/tableStateStore";
 interface IndicatorProps {
   playerOrder: number;
   tableSize: number;
@@ -37,7 +41,7 @@ export default function Indicator({ playerOrder, tableSize }: IndicatorProps) {
   const [rotateIncrement, setRotateIncrement] = useState(0);
   const ringAnimation: RingAnimation = useMemo(
     () => ({
-      initial: {},
+      initial: { animate: { width: 0, height: 0 } },
       start: {
         animate: {
           width: tableSize + 25,
@@ -45,6 +49,7 @@ export default function Indicator({ playerOrder, tableSize }: IndicatorProps) {
         },
         transition: { type: "spring", duration: 0.4, bounce: 0.5 },
       },
+      boardSetupTwo: { animate: { width: tableSize, height: tableSize } },
     }),
     [tableSize]
   );
@@ -52,24 +57,30 @@ export default function Indicator({ playerOrder, tableSize }: IndicatorProps) {
   const pointerAnimation: PointerAnimation = useMemo(
     () => ({
       initial: {},
-      pointing: { animate: { y: tableSize / 2 - tableSize / 4 / 4 } },
+      pointing: { animate: { y: tableSize / 2 - tableSize / 4 / 4, width : tableSize/5, height : tableSize /5 } },
     }),
     [tableSize]
   );
 
   useEffect(() => {
-    if (tableState === "start") {
-      setRingState("start");
-      setPointerStartPosition(turn - playerOrder);
-      setRotateIncrement(0);
-      // console.log("turn-playerOrder:", turn - playerOrder);
+    switch (tableState) {
+      case "start":
+        setRingState("start");
+        setPointerStartPosition(turn - playerOrder);
+        setRotateIncrement(0);
 
-      (async () => {
-        await wait(1500);
-        setPointerState("pointing");
-      })();
-    } else {
-      setPointerState("initial");
+        (async () => {
+          await wait(1500);
+          setPointerState("pointing");
+        })();
+        break;
+
+      case "boardSetupTwo":
+        setRingState("boardSetupTwo");
+        break;
+
+      default:
+        setPointerState("initial");
     }
   }, [tableState]);
 
@@ -77,7 +88,6 @@ export default function Indicator({ playerOrder, tableSize }: IndicatorProps) {
   useEffect(() => {
     if (turn === prevTurn.slice(-1)[0]) return;
     setPrevTurn((prev) => [...prev, turn]);
-    console.log("TurnChange");
   }, [turn]);
 
   const [temp, setTemp] = useState(0);
@@ -88,30 +98,12 @@ export default function Indicator({ playerOrder, tableSize }: IndicatorProps) {
     const increment = turn > prev ? turn - prev : 4 - (prev - turn);
     setRotateIncrement(rotateIncrement + increment);
     setTemp(prev);
-    console.log("PrevTurnChange");
   }, [prevTurn]);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "g") {
-        setRotateIncrement((prev) => prev + 1);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
 
   return (
     <>
       <motion.div
-        style={{
-          width: tableSize,
-          height: tableSize,
-        }}
+        initial={{width: 0 , height : 0}}
         animate={ringAnimation[ringState].animate}
         transition={ringAnimation[ringState].transition}
         className="absolute bg-lightgreen rounded-full flex justify-center items-center"
@@ -127,14 +119,17 @@ export default function Indicator({ playerOrder, tableSize }: IndicatorProps) {
         >
           {/* pointer */}
           <motion.div
-            style={{
-              width: tableSize / 5,
-              height: tableSize / 5,
+            initial={{
+              // width: tableSize / 5,
+              // height: tableSize / 5,
+              width : 0,
+              height : 0,
               rotateZ: 45,
+              y: 0,
             }}
-            initial={{ y: 0 }}
+            // initial={{ y: 0 }}
             animate={pointerAnimation[pointerState].animate}
-            className=" bg-darkgreen absolute rounded-lg "
+            className=" bg-darkgreen absolute rounded-lg"
           />
         </motion.div>
       </motion.div>

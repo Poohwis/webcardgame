@@ -18,6 +18,10 @@ import wait from "../utils/wait";
 import TableContainer from "../components/TableContainer";
 import UserBanner from "../components/UserBanner";
 import CallResultTextContainer from "../components/CallResultTextContainer";
+import GameNumberIndicator from "../components/GameNumberIndicator";
+import { AnnounceType, useAnnounceStore } from "../store/announceStore";
+import { useTableStateStore } from "../store/tableStateStore";
+import StartButton from "../components/StartButton";
 
 const initialState = {
   ws: null as WebSocket | null,
@@ -56,6 +60,7 @@ function reducer(state: typeof initialState, action: Action) {
       return state;
   }
 }
+
 export default function RoomPage() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [isSending, setIsSending] = useState(false);
@@ -66,6 +71,7 @@ export default function RoomPage() {
   const usersRef = useRef<User[]>([]);
   const gameStateStore = useGameStateStore();
   const cardAnimationStore = useCardAnimationStore();
+  const { setAnnounce } = useAnnounceStore();
 
   useEffect(() => {
     usersRef.current = state.users;
@@ -134,7 +140,10 @@ export default function RoomPage() {
       if (prev.includes(index)) {
         return prev.filter((i) => i !== index);
       } else {
-        if (selectCardIndices.length == 3) return prev;
+        if (selectCardIndices.length == 3) {
+          setAnnounce(AnnounceType.CardSelectExceed);
+          return prev;
+        }
         return [...prev, index];
       }
     });
@@ -237,11 +246,24 @@ export default function RoomPage() {
     setIsSending(false);
   };
 
+  useEffect(() => {
+    if (
+      gameStateStore.turn === state.order &&
+      gameStateStore.forcePlayerOrder !== -1
+    ) {
+      setAnnounce(AnnounceType.ForceThrowAll);
+    }
+  }, [gameStateStore.forcePlayerOrder]);
+
+  const { tableState } = useTableStateStore();
+
   return (
     <div className="w-screen h-screen bg-primary flex items-center justify-center overflow-hidden">
+      <StartButton ws={state.ws} users={state.users} roomUrl={wsId}/>
       <div className="relative max-w-screen-xl w-full h-full flex flex-col">
         {/* MAIN AREA*/}
         <div className="flex flex-1 flex-col relative w-full h-full">
+          <GameNumberIndicator />
           {/* TABLE */}
           <div className="flex flex-1 relative">
             <TableContainer
@@ -314,7 +336,9 @@ export default function RoomPage() {
       <div className={`absolute right-0 top-6 text-sm ${show ? "" : "hidden"}`}>
         <div>playerOrder : {state.order}</div>
         <div>gameState: {gameStateStore.currentState}</div>
+        <div>tableState: {tableState}</div>
         <div>turn: {gameStateStore.turn}</div>
+        <div>gameNumber: {gameStateStore.gameNumber}</div>
         <div>round: {gameStateStore.round}</div>
         <div>roundPlayCard: {gameStateStore.roundPlayCard}</div>
         <div>isOver: {gameStateStore.isOver.toString()}</div>

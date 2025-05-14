@@ -4,55 +4,60 @@ import {
   ONTABLECARD_WIDTH,
   playedCardStack,
 } from "./TableContainer";
+import { CardsArt } from "./CardsArt";
+import { cn } from "../utils/cn";
 
 interface TableCardProps {
-  card: playedCardStack;
+  cardName: playedCardStack;
   transition: Transition;
-  isSmallWindow : boolean
+  isSmallWindow: boolean;
 }
-export default function TableCard({ card, transition }: TableCardProps) {
+
+export default function TableCard({ cardName, transition }: TableCardProps) {
+  const cardsName = ["ACE", "JACK", "KING", "QUEEN", "JOKER"];
   return (
     <motion.div
-      key={card.id}
+      key={cardName.id}
       initial={{
-        y: card.startY,
-        x: card.startX,
-        rotateZ: card.startRotateZ,
-        scale: card.startScale,
+        y: cardName.startY,
+        x: cardName.startX,
+        rotateZ: cardName.startRotateZ,
+        scale: cardName.startScale,
       }}
       animate={{
-        y: card.endY,
-        x: card.endX,
-        rotateY: card.rotateY,
-        rotateZ: card.endRotateZ,
-        scale: card.endScale,
-      }}
-      whileTap={{
-        rotateY : 0
+        y: cardName.endY,
+        x: cardName.endX,
+        rotateY: cardName.rotateY,
+        rotateZ: cardName.endRotateZ,
+        scale: cardName.endScale,
       }}
       transition={transition}
       style={{
         width: ONTABLECARD_WIDTH,
         height: ONTABLECARD_HEIGHT,
-        zIndex: card.zIndex,
+        zIndex: cardName.zIndex,
         transformStyle: "preserve-3d",
-        position: card.isFixed ? "fixed" : "absolute",
+        position: cardName.isFixed ? "fixed" : "absolute",
       }}
       className="absolute hover:cursor-default bg-white rounded-lg  border-[1px]
                border-gray-200 font-silkbold text-white"
     >
       {/* Front Side */}
-      <div
+      <motion.div
         className="absolute w-full h-full bg-white rounded-lg flex pt-[3.3px] pl-[6.6px]"
         style={{
           transform: "rotateY(180deg)",
           backfaceVisibility: "hidden",
         }}
       >
-        <div className="text-2xl font-bold text-black vertical-writing -ml-1 tracking-[-8px]">
-          {card.card === "JOKER" ? card.card : card.card[0]}
+        <CardsArt
+          card={cardsName.findIndex((name) => name === cardName.card)}
+          sm
+        />
+        <div className="text-2xl font-bold text-black -ml-1 tracking-[-12px]">
+          {cardName.card === "JOKER" ? "JK" : cardName.card[0]}
         </div>
-      </div>
+      </motion.div>
 
       {/* Back Side */}
       <div
@@ -61,11 +66,23 @@ export default function TableCard({ card, transition }: TableCardProps) {
           backfaceVisibility: "hidden",
         }}
       >
-        <div className="flex items-center justify-center flex-col text-xl w-full h-full bg-red-800 rounded-lg">
-          <div>{card.id}</div>
-          <div>{card.zIndex}</div>
-          <div>{card.dealToOrder}</div>
-          <div>{card.isRoundPlayCard ? "rpc": ""}</div>
+        <div className="flex flex-col relative items-center justify-center text-xl w-full h-full bg-red-800 rounded-lg overflow-hidden">
+          <div className="z-10 w-[90px] self-start absolute top-1 left-1 text-[11.6px] text-white leading-3">
+            liar's card
+          </div>
+          <div className="z-10 w-[90px] self-end rotate-180 absolute bottom-1 right-1 text-[11.6px] text-white leading-3">
+            liar's card
+          </div>
+          {Array.from({ length: 24 }).map((_, index) => (
+            <div
+              key={index}
+              style={{ width: 200 - index * 8.3, height: 200 - index * 8.3 }}
+              className={cn(
+                "absolute rounded-full",
+                index % 2 === 0 ? "bg-red-800" : "bg-red-900"
+              )}
+            />
+          ))}
         </div>
       </div>
     </motion.div>

@@ -9,7 +9,7 @@ export default function Button({ children, onClick, className }: ButtonProps) {
       <motion.button
         onClick={onClick}
         whileTap={{ y: 1 }}
-        className={`font-nippo px-2 border-2  hover:opacity-80 rounded-md ${className}`}
+        className={`font-nippo px-1 border-2  hover:opacity-80 rounded-sm ${className}`}
       >
         {children}
       </motion.button>
