@@ -18,7 +18,9 @@ import PlayerTurnIndicator from "./PlayerTurnIndicator";
 import CallResultIndicator from "./CallResultIndicator";
 import RoundPlayedCardIndicator from "./RoundPlayedCardIndicator";
 import { cn } from "../utils/cn";
-import ResultRippleContainer from "./ResultRippleContainer";
+import { useWindowSizeStore } from "../store/windowSizeState";
+import { CARDSNAME } from "../constant"
+import CallRipple from "./CallRipple";
 
 export const ONTABLECARD_WIDTH = 100;
 export const ONTABLECARD_HEIGHT = 142;
@@ -83,7 +85,6 @@ export default function TableContainer({
   users,
   handleRequestNextTable,
 }: TableContainerProps) {
-  const cardsName = ["ACE", "JACK", "KING", "QUEEN", "JOKER"];
   const [playedCardStack, setPlayedCardStack] = useState<playedCardStack[]>([]);
   const [lastPlayOrder, setLastPlayOrder] = useState(-1);
   const [animationMode, setAnimationMode] = useState<AnimationMode>("default");
@@ -97,6 +98,7 @@ export default function TableContainer({
     useCardAnimationStore();
   const { addToTableQueue, tableProcessNext, tableCurrentQueue } =
     useTableAnimationStore();
+  const { isSmallWindow} = useWindowSizeStore();
 
   useEffect(() => {
     const tableStartAnimation = [
@@ -124,8 +126,11 @@ export default function TableContainer({
       handleRequestNextTable();
     };
     switch (currentState) {
+      case "initial":
+        setPlayedCardStack([]);
+        break;
       case "start":
-        setTableState("boardSetupOne");
+        // setTableState("boardSetupOne");
         if (tableState !== "initial") return;
         addToTableQueue(tableStartAnimation);
         break;
@@ -230,7 +235,7 @@ export default function TableContainer({
               rotateY: 180,
               isFixed: true,
               isRoundPlayCard: true,
-              card: cardsName[roundPlayCard],
+              card: CARDSNAME[roundPlayCard],
             }
           : c
       );
@@ -313,7 +318,7 @@ export default function TableContainer({
                 endRotateZ: endRotateZ,
                 isFixed: true,
                 rotateY: 180,
-                card: cardsName[calledCards[index]] || "temp",
+                card: CARDSNAME[calledCards[index]] || "temp",
               }
             : c
         )
@@ -411,6 +416,7 @@ export default function TableContainer({
   };
 
   const inCard = async () => {
+    await wait(1500);
     setAnimationMode("default");
     for (let i = 0; i <= 25; i++) {
       setPlayedCardStack((prev) => [
@@ -512,7 +518,7 @@ export default function TableContainer({
                 endRotateZ: endRotateZ,
                 isFixed: true,
                 rotateY: 180,
-                card: cardsName[calledCards[index]] || "temp",
+                card: CARDSNAME[calledCards[index]] || "temp",
               }
             : c
         )
@@ -613,17 +619,17 @@ export default function TableContainer({
     tableProcessNext();
   };
 
-  const shuffleCard = () => {
-    setAnimationMode("default");
-    setPlayedCardStack((prev) =>
-      prev.map((c) => ({
-        ...c,
-        endX: Math.floor(Math.random() * (TABLE_SIZE / 2)) - TABLE_SIZE / 4,
-        endY: Math.floor(Math.random() * (TABLE_SIZE / 2)) - TABLE_SIZE / 4,
-        endRotateZ: Math.floor(Math.random() * 360),
-      }))
-    );
-  };
+  // const shuffleCard = () => {
+  //   setAnimationMode("default");
+  //   setPlayedCardStack((prev) =>
+  //     prev.map((c) => ({
+  //       ...c,
+  //       endX: Math.floor(Math.random() * (TABLE_SIZE / 2)) - TABLE_SIZE / 4,
+  //       endY: Math.floor(Math.random() * (TABLE_SIZE / 2)) - TABLE_SIZE / 4,
+  //       endRotateZ: Math.floor(Math.random() * 360),
+  //     }))
+  //   );
+  // };
 
   const dealCardToHand = async () => {
     await wait(200);
@@ -718,26 +724,6 @@ export default function TableContainer({
     tableProcessNext();
   };
 
-  const [isSmallWindow, setIsSmallWindow] = useState(
-    () => window.innerWidth < 640
-  );
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 640) {
-        setIsSmallWindow(window.innerWidth < 640);
-      } else {
-        setIsSmallWindow(false);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    handleResize(); // Initial check
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
   const [tableSize, setTableSize] = useState(400);
   useEffect(() => {
     const largeTableDimension = 400;
@@ -749,7 +735,6 @@ export default function TableContainer({
     }
   }, [isSmallWindow]);
 
-  // const ring = PCOLOR.map((color)=> chroma.mix(color, "white", 0.8).hex()).map((hex)=> `bg-[${hex}]`)
   const outerRingColor = [
     "bg-[#c6ded7]",
     "bg-[#f6ccd1]",
@@ -760,20 +745,27 @@ export default function TableContainer({
     tableState === "start" ||
     tableState === "callFail" ||
     tableState === "callSuccess";
+
+  const [isTableContainerShow, setIsTableContainerShow] = useState(false);
+  useEffect(() => {
+    if (tableState === "boardSetupOne") {
+      setIsTableContainerShow(true);
+    }
+    if (tableState === "initial") {
+      setIsTableContainerShow(false);
+    }
+  }, [tableState]);
+
   return (
     <>
       <div className="w-full h-full flex items-center justify-center relative mt-12">
-        <ResultRippleContainer
-          width={isSmallWindow ? 250 : 400}
-          height={isSmallWindow ? 250 : 400}
-        />
+        <CallRipple />
         <PlayCardRingIndicator
           radius={156}
           size={isSmallWindow ? 250 : 400}
-          isSmallWindow={isSmallWindow}
           text={
-            cardsName[roundPlayCard]
-              ? cardsName[roundPlayCard] + "'S TABLE"
+            CARDSNAME[roundPlayCard]
+              ? CARDSNAME[roundPlayCard] + "'S TABLE"
               : ""
           }
           isShow={tableStarted}
@@ -797,17 +789,11 @@ export default function TableContainer({
         >
           {/* container */}
           <motion.div
-            // style={{width : tableSize, height : tableSize}}
             initial={{ width: 0, height: 0 }}
             animate={
-              tableState === "boardSetupOne"
-                ? {
-                    width: tableSize,
-                    height: tableSize,
-                  }
-                : tableState !== "initial"
+              isTableContainerShow
                 ? { width: tableSize, height: tableSize }
-                : {}
+                : { width: 0, height: 0 }
             }
             transition={{ type: "spring", bounce: 0.25 }}
             onAnimationComplete={() => {
@@ -817,17 +803,13 @@ export default function TableContainer({
             }}
             className="flex items-center justify-center bg-darkgreen rounded-full"
           />
-          <PlayerTurnIndicator users={users} isSmallWindow={isSmallWindow} />
-          <RoundPlayedCardIndicator
-            users={users}
-            isSmallWindow={isSmallWindow}
-          />
-          <CallResultIndicator users={users} isSmallWindow={isSmallWindow} />
+          <PlayerTurnIndicator users={users} />
+          <RoundPlayedCardIndicator users={users} />
+          <CallResultIndicator users={users} />
           {playedCardStack.map((card, index) => (
             <TableCard
               key={index}
               cardName={card}
-              isSmallWindow={isSmallWindow}
               transition={tableCardAnimationVariants[animationMode].transition}
             />
           ))}

@@ -1,6 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Action, Chat } from "../type";
 import ChatItem from "./ChatItem";
+import { cn } from "../utils/cn";
+import { motion } from "motion/react";
 
 interface ChatBoxProps {
   chats: Chat[];
@@ -34,10 +36,18 @@ export default function ChatBox({
     }
   }, [chats]);
   return (
-    <div className="font-nippo w-full h-[160px] sm:flex hidden flex-col m-4 bg-transparent border-2 border-accent rounded-md px-2 pb-2 ">
+    <motion.div
+      initial={{ width: "50%", opacity: 0, scale: 0 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      className={cn(
+        "font-nippo h-[160px] sm:flex hidden flex-col m-4 bg-gray-900/70 shadow-md shadow-gray-800 rounded-md px-2 pb-2 "
+      )}
+    >
       <div className="flex flex-row justify-between">
-        <div className="font-semibold text-sm text-orange">Message box</div>
-        <div className="text-gray hover:cursor-pointer">-</div>
+        <div className="text-sm text-white/80 px-2 mt-2">
+          Message box
+        </div>
+        <button className="text-gray">-</button>
       </div>
       <div
         ref={scrollRef}
@@ -49,11 +59,11 @@ export default function ChatBox({
         <input
           ref={inputRef}
           type="text"
-          className="font-nippo pl-1 rounded-md w-full bg-accent focus:outline-none caret-gray-400 text-lightgray text-sm py-[2px]"
+          className="font-nippo pl-1 rounded-md w-full bg-gray-800 focus:outline-none caret-gray-400 text-white/80 text-sm py-[2px]"
           value={chatInput}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-              if(chatInput.trim() === "")return
+              if (chatInput.trim() === "") return;
               handleMessageSend("chat");
             }
           }}
@@ -62,7 +72,6 @@ export default function ChatBox({
           }
         />
       </div>
-    </div>
+    </motion.div>
   );
 }
-

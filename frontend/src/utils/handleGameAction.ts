@@ -1,17 +1,12 @@
-import {
-  CardAnimationMode,
-  CardAnimationState,
-} from "../store/cardAnimationStore";
 import { GameState } from "../store/gameStateStore";
 import { GameMessage } from "../type";
 
 export default async function handleGameAction(
   payload: GameMessage["payload"],
   gameStateStore: GameState,
-  cardAnimationStore: CardAnimationState
+  handleResetGame : ()=> void
 ) {
   const { updateGameState } = gameStateStore;
-  const { addToQueue } = cardAnimationStore;
 
   //for now bulk update the clientState for easy implement; TODO: update only the updated state
   switch (payload.action) {
@@ -39,7 +34,15 @@ export default async function handleGameAction(
     case "toNextGame":
       updateGameState(payload)
       break;
+    case "gameResult" :
+      updateGameState(payload)
+      break
+    case "initial" :
+      // updateGameState(payload)
+      // gameStateStore.resetGameState()
+      handleResetGame()
+      break
     default:
-    //   console.warn("Unhandled action type:", payload.action);
+      console.warn("Unhandled action type:", payload);
   }
 }

@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"sync"
+	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -38,6 +41,7 @@ type Room struct {
 	Slots           [4]*websocket.Conn
 	ClientGameState *game.ClientGameState
 	ServerGameState *game.ServerGameState
+	IsJoinable      bool
 	Mutex           sync.Mutex
 }
 
@@ -60,12 +64,27 @@ func main() {
 
 	http.HandleFunc("/create", server.handleCreateRoom)
 	http.HandleFunc("/ws/", server.handleWebSocket)
+	http.HandleFunc("/validate/", server.handleValidateRoom)
 
 	fmt.Println("Server started on :8080")
 	// err := http.ListenAndServe(":8080", nil)
 	err := http.ListenAndServe("127.0.0.1:8080", nil)
 	if err != nil {
 		log.Fatalf("Error starting server: %s", err)
+	}
+}
+func (s *Server) handleValidateRoom(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*") // Change "*" to a specific domain for more security
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	roomId := r.URL.Path[len("/validate/"):]
+
+	if _, exists := s.Rooms[roomId]; exists {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Room exists"))
+	} else {
+		http.Error(w, "Room not found", http.StatusNotFound)
 	}
 }
 
@@ -87,6 +106,7 @@ func (s *Server) handleCreateRoom(w http.ResponseWriter, r *http.Request) {
 		Users:           make(map[*websocket.Conn]User),
 		IncomingMessage: make(chan Message, 10),
 		OutgoingMessage: make(chan OutgoingMessage, 10),
+		IsJoinable:      true,
 		// GameState:       game.NewGameState(),
 	}
 	s.Mutex.Lock()
@@ -115,7 +135,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO : complete query send on client side
+	//TODO : complete query send on client side (name memory)
 	query := r.URL.Query()
 	displayname := query.Get("displayname")
 
@@ -129,7 +149,27 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if !room.IsJoinable {
+		_ = conn.WriteJSON(OutgoingMessage{
+			Type: "error",
+			Payload: map[string]interface{}{
+				"type": "errClosedRoom",
+			},
+		})
+		conn.Close()
+		log.Println("Room is not available right now")
+		room.Mutex.Unlock()
+		//TODO: write to client: reject connection and test more about error that can occur in the room
+		return
+	}
+
 	if slotNum == -1 {
+		_ = conn.WriteJSON(OutgoingMessage{
+			Type: "error",
+			Payload: map[string]interface{}{
+				"type": "errRoomFull",
+			},
+		})
 		conn.Close()
 		log.Println("Room is full, rejecting connection.")
 		room.Mutex.Unlock()
@@ -138,7 +178,13 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if displayname == "" {
-		displayname = fmt.Sprintf("Player%d", slotNum+1)
+		// displayname = fmt.Sprintf("Player%d", slotNum+1)
+		existingNames := make(map[string]bool)
+		for _, user := range room.Users {
+			existingNames[user.DisplayName] = true
+		}
+
+		displayname = generatePlayerName(existingNames)
 	}
 
 	room.Slots[slotNum] = conn
@@ -150,7 +196,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	room.Mutex.Unlock()
 
 	log.Printf("%s joined room %s as Player%d", displayname, roomID, slotNum+1)
-	conn.WriteJSON(OutgoingMessage{
+	_ = conn.WriteJSON(OutgoingMessage{
 		Type: "initializeSlot",
 		Payload: map[string]interface{}{
 			"order":       slotNum + 1,
@@ -163,6 +209,39 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	s.updateUserList(room)
 
 	go s.readMessage(conn, room)
+}
+
+func generatePlayerName(existingNames map[string]bool) string {
+	var prefixs = []string{
+		"Captain", "Commander", "Major", "Colonel", "Admiral", "General", "Private",
+		"Agent", "Detective", "Officer", "Sheriff",
+		"Dr", "Professor", "Sir", "Master", "Boss", "Chief",
+		"Big", "Lil", "Old", "Crazy", "Happy", "Grumpy", "Sneaky",
+	}
+
+	var animals = []string{
+		"Lion", "Tiger", "Bear", "Wolf", "Fox", "Eagle", "Shark", "Panther",
+		"Falcon", "Otter", "Penguin", "Koala", "Leopard", "Cobra", "Rabbit",
+		"Turtle", "Hawk", "Lynx", "Jaguar", "Rhino",
+	}
+
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < len(animals)*2; i++ {
+		animal := animals[rng.Intn(len(animals))]
+		prefix := prefixs[rng.Intn(len(prefixs))]
+		name := prefix + animal
+		if !existingNames[name] {
+			return name
+		}
+	}
+	// As fallback, append a number
+	for i := 1; ; i++ {
+		name := fmt.Sprintf("Player%d", i)
+		if !existingNames[name] {
+			return name
+		}
+	}
+
 }
 
 func (s *Server) manageRoom(room *Room) {
@@ -242,7 +321,16 @@ func handleGameIncomingMessage(room *Room, message Message) {
 	case "start":
 		log.Print("Game start")
 
-		room.ClientGameState, room.ServerGameState = game.NewGameState(len(room.Clients))
+		//TODO : finish the To win score logic
+
+		room.Mutex.Lock()
+		room.IsJoinable = false
+		room.Mutex.Unlock()
+
+		endGameScore := int(message.Payload["endGameScore"].(float64))
+		log.Println("Endgame score at:", endGameScore)
+
+		room.ClientGameState, room.ServerGameState = game.NewGameState(room.Slots, endGameScore)
 
 		for client := range room.Clients {
 			playerIndex := room.Users[client].Order - 1
@@ -252,8 +340,18 @@ func handleGameIncomingMessage(room *Room, message Message) {
 				"state":  room.ClientGameState,
 			})
 		}
+
+	case "reset":
+		room.Mutex.Lock()
+		room.IsJoinable = true
+		room.Mutex.Unlock()
+
+		sendToAll(room, "game", map[string]interface{}{
+			"action": "initial",
+		})
+
 	case "nextRound":
-		room.ClientGameState.NextRound(room.ServerGameState)
+		room.ClientGameState.NextRound(room.ServerGameState, room.Slots)
 		for client := range room.Clients {
 			playerIndex := room.Users[client].Order - 1
 			if room.ClientGameState.PlayersChance[playerIndex] == 0 {
@@ -272,7 +370,15 @@ func handleGameIncomingMessage(room *Room, message Message) {
 		}
 
 	case "nextGame":
-		room.ClientGameState.NextGame(room.ServerGameState)
+		isEndgameScoreMeet := room.ClientGameState.NextGame(room.ServerGameState, room.Slots)
+		if isEndgameScoreMeet {
+			sendToAll(room, "game", map[string]interface{}{
+				"action":     "gameResult",
+				"state":      room.ClientGameState,
+				"gameResult": room.ClientGameState.Playerscore,
+			})
+			return
+		}
 
 		for client := range room.Clients {
 			playerIndex := room.Users[client].Order - 1
@@ -320,9 +426,9 @@ func handleGameIncomingMessage(room *Room, message Message) {
 		lastPlayOrder := room.ClientGameState.LastPlayedBy
 
 		log.Printf("PlayerOrder:%v called : %v", message.SenderSlot, lastPlayOrder[len(lastPlayOrder)-1])
-		isGameEnd, isCallSuccess := room.ClientGameState.CallCheck(room.ServerGameState, message.SenderSlot, lastPlayOrder[len(lastPlayOrder)-1])
+		isToNextGame, isCallSuccess := room.ClientGameState.CallCheck(room.ServerGameState, message.SenderSlot, lastPlayOrder[len(lastPlayOrder)-1])
 		action := "toNextRound"
-		if isGameEnd {
+		if isToNextGame {
 			action = "toNextGame"
 		}
 		log.Printf("%v", action)
@@ -331,7 +437,6 @@ func handleGameIncomingMessage(room *Room, message Message) {
 			"state":         room.ClientGameState,
 			"calledCards":   room.ServerGameState.OnTableCard,
 			"isCallSuccess": isCallSuccess,
-			// "callerAndCalled": []int{message.SenderSlot, lastPlayOrder[len(lastPlayOrder)-1]},
 		})
 
 	case "s":
@@ -370,14 +475,21 @@ func (s *Server) handleIncomingMessage(room *Room, message Message) {
 			return
 		}
 
-		if len(newName) < 1 || len(newName) > 15 {
-			log.Println("Name must contain more than 1 and less than 15 characthers")
+		if utf8.RuneCountInString(newName) < 1 || utf8.RuneCountInString(newName) > 16 {
+			log.Println("Name must contain between 1 and 16 characters", utf8.RuneCountInString(newName))
 			return
 		}
 
 		for _, user := range room.Users {
 			if user.DisplayName == newName {
-				log.Println("Name already in use")
+				senderIndex := message.SenderSlot - 1
+				if senderIndex >= 0 && senderIndex < len(room.Slots) {
+					senderConn := room.Slots[senderIndex]
+					sendToClient(senderConn, "nameChangeStatus", map[string]interface{}{
+						"isReject": true,
+						"name":     room.Users[room.Slots[message.SenderSlot-1]].DisplayName})
+					log.Println("Name already in use")
+				}
 				return
 			}
 		}
@@ -388,6 +500,8 @@ func (s *Server) handleIncomingMessage(room *Room, message Message) {
 				user.DisplayName = newName
 				room.Users[conn] = user // Update user map
 				log.Printf("Player %d changed name to %s", message.SenderSlot, newName)
+				sendToClient(conn, "nameChangeStatus", map[string]interface{}{"isReject": false, "name": newName})
+				log.Println(user.DisplayName)
 
 				// Notify all clients about the name change
 				room.OutgoingMessage <- OutgoingMessage{
@@ -398,6 +512,7 @@ func (s *Server) handleIncomingMessage(room *Room, message Message) {
 						"displayName": newName,
 					},
 				}
+
 				break
 			}
 		}
@@ -441,12 +556,34 @@ func (s *Server) removePlayer(conn *websocket.Conn, room *Room) {
 
 	displayName := room.Users[conn].DisplayName
 	order := room.Users[conn].Order
+
+	isOnlyOnePlayerLeft := false
+	isGoToNextGame := false
+	skipToTurn := -1
+	if room.ClientGameState != nil {
+		isOnlyOnePlayerLeft, isGoToNextGame, skipToTurn = room.ClientGameState.SetLeavePlayer(order, room.Slots)
+	}
+	log.Println(isGoToNextGame)
+
 	delete(room.Clients, conn)
 	delete(room.Users, conn)
+
 	room.Mutex.Unlock()
 
 	sendToAll(room, "out", map[string]interface{}{"order": order, "displayName": displayName})
+
+	if isOnlyOnePlayerLeft {
+		//show all disconnect message
+		log.Println("isOnlyOnePlayerLeft:", isOnlyOnePlayerLeft)
+		sendToAll(room, "game", map[string]interface{}{"action": "gameResult", "state": room.ClientGameState, "gameResult": []int{-1}})
+	}
+
+	if skipToTurn != -1 {
+		log.Println("Turn skipped to:", skipToTurn)
+		sendToAll(room, "game", map[string]interface{}{"action": "playCard", "state": room.ClientGameState})
+	}
 	log.Printf("%s left the room", displayName)
+	log.Printf("Slots: %v", room.Slots)
 
 	s.updateUserList(room)
 }

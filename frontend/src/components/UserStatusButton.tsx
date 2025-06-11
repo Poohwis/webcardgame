@@ -1,3 +1,4 @@
+// may not use this component TODO : Delete
 import { User } from "../type";
 import { AnimatePresence, motion } from "framer-motion";
 import { sendStartMessageToServer } from "../utils/sendToServerGameMessage";
@@ -34,7 +35,7 @@ export default function UserStatusButton({ users, ws }: UserStatusButtonProps) {
             exit={{ y:isGameStart ? 20 :0, x: isGameStart ? 0 : 20, opacity: 0 }}
             whileHover={{ opacity: 0.8 }}
             whileTap={{ y: 1 }}
-            onClick={() => sendStartMessageToServer(ws)}
+            onClick={() => sendStartMessageToServer(ws, 2)}
             className="border-orange border-2 rounded-md text-white/80 bg-orange w-[200px] h-full"
           >
             Start !!

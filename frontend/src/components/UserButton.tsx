@@ -1,4 +1,5 @@
 import { motion } from "motion/react";
+import { AutoLangText } from "./AutoLangText";
 
 export default function UserButton({ name, color }: { name: string; color: string; }) {
     return (
@@ -20,7 +21,9 @@ export default function UserButton({ name, color }: { name: string; color: strin
                 style={{ background: color, borderColor: color }}
                 className={`hidden sm:flex border-2 text-white/80 rounded-full px-2 text-center text-nowrap`}
             >
+                <AutoLangText>
                 {name}
+                </AutoLangText>
             </motion.div>
         </div>
     );

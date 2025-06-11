@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import wait from "../utils/wait";
 
 interface WaveTextWrapperProps {
   children: string;
@@ -43,10 +44,12 @@ export default function WaveTextWrapper({
                     ease: "easeInOut",
                   },
                 }
-              : { y: 10 }
+              : {}
           }
-          onAnimationComplete={() => {
+          onAnimationComplete={async() => {
             if (i === letters.length - 1) {
+              await wait(1500)
+            console.log("end")
               setIsWaving(false);
               onWaveEnd();
             }

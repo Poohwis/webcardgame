@@ -3,31 +3,36 @@ import { User } from "../type";
 import { useTableStateStore } from "../store/tableStateStore";
 import { useGameStateStore } from "../store/gameStateStore";
 import { PCOLOR } from "../constant";
+import { useWindowSizeStore } from "../store/windowSizeState";
 
 interface PlayerTurnIndicatorProps {
   users: User[];
-  isSmallWindow: boolean
 }
 export default function PlayerTurnIndicator({
   users,
-  isSmallWindow
 }: PlayerTurnIndicatorProps) {
   const { turn } = useGameStateStore();
   const { tableState } = useTableStateStore();
+  const { isSmallWindow, cardContainerPosition } = useWindowSizeStore();
+
+  const currentPlayerIndex = users.findIndex((user) => user.order === turn);
   return (
-    <div className="fixed sm:absolute sm:bottom-2 sm:top-auto top-[50%] right-0 sm:right-auto -translate-y-8">
+    <div
+      style={{ top: isSmallWindow ? cardContainerPosition - 82 : "" }}
+      className="fixed sm:absolute sm:bottom-2 sm:top-auto right-0 sm:right-auto sm:-translate-y-8"
+    >
       <AnimatePresence mode="wait">
-        {users[turn - 1] && tableState === "start" && (
+        {users[currentPlayerIndex] && tableState === "start" && (
           <motion.div
-            key={users[turn - 1].displayName}
-            style={{ color: PCOLOR[turn - 1] }}
-            initial={{ x:isSmallWindow ? 100: 10, opacity: 0 }}
+            key={users[currentPlayerIndex].displayName}
+            style={{ color: PCOLOR[users[currentPlayerIndex].order - 1] }}
+            initial={{ x: isSmallWindow ? 100 : 10, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x:isSmallWindow ? 100 : -10, opacity: 0 }}
+            exit={{ x: isSmallWindow ? 100 : -10, opacity: 0 }}
             transition={{ duration: 0.3, delay: 0.5 }}
             className=" bg-gray-700 px-2 text-sm sm:text-base sm:rounded-full rounded-l-full font-pixelify font-semibold opacity-80 transition-colors"
           >
-            {users[turn - 1].displayName}
+            {users[currentPlayerIndex].displayName}
             <span className="text-white/80"> Turn</span>
           </motion.div>
         )}

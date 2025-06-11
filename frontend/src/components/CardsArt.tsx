@@ -2,17 +2,23 @@ import { cn } from "../utils/cn";
 
 interface CardsArtProps {
   card: number;
+  fillColor?: boolean;
   sm?: boolean;
   isHover?: boolean;
 }
-export function CardsArt({ card, sm = false, isHover }: CardsArtProps) {
+export function CardsArt({
+  card,
+  sm = false,
+  isHover,
+  fillColor = false,
+}: CardsArtProps) {
   switch (card) {
     case 0:
-      return <AceArt sm={sm} isHover={isHover} />;
+      return <AceArt sm={sm} isHover={isHover} fillColor={fillColor} />;
     case 1:
-      return <JackArt sm={sm} isHover={isHover} />;
+      return <JackArt sm={sm} isHover={isHover} fillColor={fillColor}/>;
     case 2:
-      return <KingArt sm={sm} isHover={isHover} />;
+      return <KingArt sm={sm} isHover={isHover} fillColor={fillColor}/>;
     case 3:
       return <QueenArt sm={sm} />;
     case 4:
@@ -23,8 +29,9 @@ export function CardsArt({ card, sm = false, isHover }: CardsArtProps) {
 interface ArtProps {
   sm: boolean;
   isHover?: boolean;
+  fillColor?: boolean;
 }
-const AceArt = ({ sm, isHover }: ArtProps) => {
+const AceArt = ({ sm, isHover, fillColor }: ArtProps) => {
   return (
     <div
       className={cn(
@@ -34,6 +41,7 @@ const AceArt = ({ sm, isHover }: ArtProps) => {
       )}
     >
       <div
+        style={{ backgroundColor: fillColor ? "#f3f4f6" : "" }}
         className={cn(
           " w-6 h-9 -bottom-[3px] absolute -translate-x-[50%] left-[50%] rounded-[4px]",
           isHover ? "bg-gray-100" : "bg-white"
@@ -48,7 +56,7 @@ const AceArt = ({ sm, isHover }: ArtProps) => {
     </div>
   );
 };
-const JackArt = ({ sm, isHover }: ArtProps) => {
+const JackArt = ({ sm, isHover, fillColor }: ArtProps) => {
   const skinColor = "#fadca9";
   return (
     <div
@@ -65,12 +73,14 @@ const JackArt = ({ sm, isHover }: ArtProps) => {
         <div className="w-2 h-2 bg-[#fadca9] absolute -bottom-1 left-[50%] -translate-x-[50%] rotate-45" />
         <div className="w-full h-4 bg-red-800 flex items-center justify-between ">
           <div
+        style={{ borderTopColor: fillColor ? "#f3f4f6" : "" }}
             className={cn(
               "w-0 h-0 absolute -mt-3 border-r-[32px] border-r-transparent border-t-[6px] -ml-[1px]",
               isHover ? "border-t-gray-100" : "border-t-white"
             )}
           />
           <div
+        style={{ borderTopColor: fillColor ? "#f3f4f6" : "" }}
             className={cn(
               "w-0 h-0 absolute right-0 -mt-3 border-l-[32px] border-l-transparent border-t-[6px] -mr-[1px]",
               isHover ? "border-t-gray-100" : "border-t-white"
@@ -97,7 +107,7 @@ const JackArt = ({ sm, isHover }: ArtProps) => {
     </div>
   );
 };
-const KingArt = ({ sm, isHover }: ArtProps) => {
+const KingArt = ({ sm, isHover, fillColor }: ArtProps) => {
   const skinColor = "#fadca9";
   return (
     <div
@@ -112,12 +122,14 @@ const KingArt = ({ sm, isHover }: ArtProps) => {
       <div className="bg-amber-700 w-[3px] h-12 absolute right-0" />
       <div className="relative w-full h-7 bg-yellow-500 flex flex-row justify-between">
         <div
+        style={{ backgroundColor: fillColor ? "#f3f4f6" : "" }}
           className={cn(
             "w-6 h-6 -mt-3 rotate-[45deg]",
             isHover ? "bg-gray-100" : "bg-white"
           )}
         />
         <div
+        style={{ backgroundColor: fillColor ? "#f3f4f6" : "" }}
           className={cn(
             "w-6 h-6 -mt-3 rotate-[45deg]",
             isHover ? "bg-gray-100" : "bg-white"

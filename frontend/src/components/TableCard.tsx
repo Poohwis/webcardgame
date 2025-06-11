@@ -6,15 +6,14 @@ import {
 } from "./TableContainer";
 import { CardsArt } from "./CardsArt";
 import { cn } from "../utils/cn";
+import {CARDSNAME} from "../constant"
 
 interface TableCardProps {
   cardName: playedCardStack;
   transition: Transition;
-  isSmallWindow: boolean;
 }
 
 export default function TableCard({ cardName, transition }: TableCardProps) {
-  const cardsName = ["ACE", "JACK", "KING", "QUEEN", "JOKER"];
   return (
     <motion.div
       key={cardName.id}
@@ -51,7 +50,7 @@ export default function TableCard({ cardName, transition }: TableCardProps) {
         }}
       >
         <CardsArt
-          card={cardsName.findIndex((name) => name === cardName.card)}
+          card={CARDSNAME.findIndex((name) => name === cardName.card)}
           sm
         />
         <div className="text-2xl font-bold text-black -ml-1 tracking-[-12px]">

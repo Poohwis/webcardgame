@@ -9,6 +9,7 @@ export enum CardAnimationMode {
   FlipToFront = "flipfront",
   Fall = "fall",
   Up = "up",
+  Reset = "reset",
   Ready = "ready",
   Wait = "wait",
   FlipS = "flips",
@@ -26,6 +27,8 @@ export interface CardAnimationState {
   dealCardAnimation: () => void;
   playCardAnimation: () => void;
   returnCardAnimation: () => void;
+  resetCardAnimation : ()=> void
+  clearQueue: () => void;
 }
 
 export const useCardAnimationStore = create<CardAnimationState>((set) => ({
@@ -48,6 +51,7 @@ export const useCardAnimationStore = create<CardAnimationState>((set) => ({
 
       return { queue: newQueue, currentMode: nextMode };
     }),
+  clearQueue: () => set(() => ({ queue: [], currentMode : CardAnimationMode.Ready })),
   dealCardAnimation: () =>
     set((state) => {
       state.addToQueue([
@@ -81,4 +85,9 @@ export const useCardAnimationStore = create<CardAnimationState>((set) => ({
       ]);
       return {};
     }),
+    resetCardAnimation : ()=>
+       set((state) => {
+        state.addToQueue([CardAnimationMode.Reset])
+        return {}
+       })
 }));

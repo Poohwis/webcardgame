@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { useTableStateStore } from "../store/tableStateStore";
 import { cn } from "../utils/cn";
+import { useWindowSizeStore } from "../store/windowSizeState";
 interface RoundPlayCardIndicator {
   radius: number;
   size: number;
@@ -9,7 +10,6 @@ interface RoundPlayCardIndicator {
   className?: string;
   reversed?: boolean;
   isShow: boolean;
-  isSmallWindow: boolean;
 }
 
 export default function PlayCardRingIndicator({
@@ -20,8 +20,8 @@ export default function PlayCardRingIndicator({
   className = "",
   reversed = false,
   isShow,
-  isSmallWindow,
 }: RoundPlayCardIndicator) {
+  const { isSmallWindow } = useWindowSizeStore();
   const ringSize = isShow ? size * (isSmallWindow ? 1.36 : 1.25) : size;
   const centerX = ringSize / 2;
   const chordLength = 280;
@@ -46,7 +46,11 @@ export default function PlayCardRingIndicator({
     <motion.svg
       className={cn(
         `absolute rounded-full font-silk ${className} transition-colors duration-500`,
-          tableState=== "initial" || tableState === "boardSetupOne" || tableState === "boardSetupTwo" ? "hidden" : "visible"
+        tableState === "initial" ||
+          tableState === "boardSetupOne" ||
+          tableState === "boardSetupTwo"
+          ? "hidden"
+          : "visible"
       )}
       animate={{
         width: ringSize,

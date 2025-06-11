@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
-import { AnnounceType, useAnnounceStore } from "../store/announceStore";
+import { InGameAnnounceType, useInGameAnnounceStore } from "../store/inGameAnnounceStore";
 import { useTableStateStore } from "../store/tableStateStore";
+import { useEffect, useState } from "react";
 interface GameButtonProps {
   onClick: () => void;
   isSending: boolean;
@@ -10,7 +11,7 @@ interface GameButtonProps {
   type: "call" | "throw";
   turn: number;
   order: number;
-  showDelaySecond : number
+  showDelaySecond: number;
 }
 export default function GameButton({
   onClick,
@@ -21,15 +22,27 @@ export default function GameButton({
   type,
   turn,
   order,
-  showDelaySecond
+  showDelaySecond,
 }: GameButtonProps) {
-  const { setAnnounce, resetAnnounce } = useAnnounceStore();
+  const { setAnnounce, resetAnnounce } = useInGameAnnounceStore();
   const { tableState } = useTableStateStore();
+  const [isButtonShow, setIsButtonShow] = useState(false);
+
+  useEffect(()=> {
+    if(tableState === "boardSetupOne") {
+      setIsButtonShow(true)
+    }
+    if(tableState === "initial") {
+      setIsButtonShow(false)
+    }
+
+  },[tableState])
+
   return (
     <motion.button
-      initial={{scale : 0}}
-      animate={tableState === "boardSetupOne" && {scale : 1}}
-      transition={{delay : showDelaySecond}}
+      initial={{ scale: 0 }}
+      animate={isButtonShow ? { scale: 1 } : {scale : 0}}
+      transition={{ delay: showDelaySecond }}
       onClick={onClick}
       whileTap={{ y: 2 }}
       onTap={() => {
@@ -38,10 +51,10 @@ export default function GameButton({
         }
         if (turn !== order) return;
         if (type === "call") {
-          return setAnnounce(AnnounceType.NoCallAllowed);
+          return setAnnounce(InGameAnnounceType.NoCallAllowed);
         }
         if (type === "throw") {
-          return setAnnounce(AnnounceType.CardNotSelect);
+          return setAnnounce(InGameAnnounceType.CardNotSelect);
         }
       }}
       className="

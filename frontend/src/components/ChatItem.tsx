@@ -1,5 +1,6 @@
 import { PCOLOR } from "../constant";
 import { Chat } from "../type";
+import { cn } from "../utils/cn";
 
 interface ChatItemProps {
   chats: Chat[];
@@ -10,7 +11,7 @@ export default function ChatItem({ chats }: ChatItemProps) {
       {chats.map((chat, index) => {
         const color = { color: PCOLOR[chat.order - 1] };
 
-        switch (chat.isAnnounce) {
+        switch (chat.announceType) {
           case "in":
           case "out":
             return (
@@ -18,7 +19,7 @@ export default function ChatItem({ chats }: ChatItemProps) {
                 key={index}
                 color={color}
                 displayName={chat.displayName}
-                action={chat.isAnnounce === "in" ? "joined" : "left"}
+                action={chat.announceType === "in" ? "joined" : "left"}
               />
             );
 
@@ -55,11 +56,15 @@ const AnnouncementMessage = ({
   displayName: string;
   action: string;
 }) => (
-  <div className="text-sm text-orange break-words whitespace-pre-wrap pl-1">
-    {"[ "}
+  <div className="text-sm text-white/80 break-words whitespace-pre-wrap pl-1">
+    {/* {"[ "} */} {"・ "}
     <span style={color}>{displayName} </span>
-    has {action} the room.
-    {" ]"}
+    has 
+    <span className={cn("", action =="joined" ? "text-lime-400" : "text-rose-400")}>
+    {" "}{action}{" "}
+    </span>
+     the room.
+    {/* {" ]"} */}
   </div>
 );
 
@@ -72,11 +77,11 @@ const NameChangeMessage = ({
   prevName: string;
   displayName: string;
 }) => (
-  <div className="text-sm text-orange break-words whitespace-pre-wrap pl-1">
-    {"[ "}
+  <div className="text-sm text-white/80 break-words whitespace-pre-wrap pl-1">
+    {/* {"[ "} */}
     <span style={color}>{prevName} </span>
     changed name to <span style={color}>{displayName}</span>
-    {". ]"}
+    {/* {". ]"} */}
   </div>
 );
 
@@ -89,7 +94,7 @@ const ChatMessage = ({
   displayName: string;
   message: string;
 }) => (
-  <div className="text-sm text-lightgray break-words whitespace-pre-wrap pl-1">
+  <div className="text-sm text-white/80 break-words whitespace-pre-wrap pl-1">
     <span style={color}>{displayName}: </span>
     {message}
   </div>

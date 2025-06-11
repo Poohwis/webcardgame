@@ -35,7 +35,6 @@ export default function ResultRippleContainer({
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key === "t") {
         setAnimateRipple((prev) => !prev);
-        console.log("here");
       }
     };
     window.addEventListener("keypress", handleKeyPress);

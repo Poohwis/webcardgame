@@ -90,14 +90,14 @@ export default function Indicator({ playerOrder, tableSize }: IndicatorProps) {
     setPrevTurn((prev) => [...prev, turn]);
   }, [turn]);
 
-  const [temp, setTemp] = useState(0);
+  const [tracker, setTracker] = useState(0);
   useEffect(() => {
     const prev = prevTurn.slice(-2)[0];
     if (prev === -1 || turn === -1) return;
-    if (temp === prev) return;
+    if (tracker === prev) return;
     const increment = turn > prev ? turn - prev : 4 - (prev - turn);
     setRotateIncrement(rotateIncrement + increment);
-    setTemp(prev);
+    setTracker(prev);
   }, [prevTurn]);
 
   return (

@@ -7,7 +7,7 @@ interface UserListProps {
 }
 export default function UserList({ users }: UserListProps) {
   return (
-    <div className="text-sm flex flex-row space-x-4">
+    <div className="text-sm font-nippo flex flex-row space-x-4">
       {users
         .sort((a, b) => a.order - b.order)
         .map((item) => (
@@ -15,6 +15,7 @@ export default function UserList({ users }: UserListProps) {
             name={item.displayName}
             color={PCOLOR[item.order - 1]}
             key={item.displayName}
+            
           />
         ))}
     </div>

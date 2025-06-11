@@ -31,7 +31,7 @@ export default function UserBanner({
   const { playersHandCount, playersScore, playersChance, turn } =
     useGameStateStore();
   const { pointerState } = useTableStateStore();
-  const {tableState} =useTableStateStore()
+  const { tableState } = useTableStateStore();
 
   //position of banner show->left top right
   const largeBannerPosition = {
@@ -55,12 +55,21 @@ export default function UserBanner({
     return indices.length === 1 ? indices[0] : -1;
   }
 
+  const [isBannerShow, setIsBannerShow] = useState(false);
+  useEffect(() => {
+    if (tableState === "boardSetupTwo") {
+      setIsBannerShow(true);
+    }
+    if (tableState === "initial") {
+      setIsBannerShow(false);
+    }
+  }, [tableState]);
   return (
     <>
       {users.map((user) => {
         const povSlot = ((user.order - selfOrder + 4) % 4) as 1 | 2 | 3 | 0;
         const userIndex = user.order - 1;
-        const isBannerShow = tableState === "boardSetupTwo";
+        // const isBannerShow = tableState === "boardSetupTwo";
         if (povSlot === 0)
           return (
             <div key={user.order}>
@@ -161,7 +170,7 @@ const SelfBanner = ({
         {/* Main */}
         <motion.div
           initial={{ y: 100 }}
-          animate={isBannerShow && { y: 0 }}
+          animate={isBannerShow ? { y: 0 } : { y: 100 }}
           style={{ top: 17 }}
           className="z-50 w-[162px] h-[65px] relative
       rounded-t-lg font-pixelify flex flex-col items-center"
@@ -267,7 +276,13 @@ const SmallBanner = ({
     <motion.div
       style={isLeftSide ? { left: 0 } : { right: width }}
       initial={isLeftSide ? { opacity: 0, x: -10 } : { opacity: 0, x: 10 }}
-      animate={isBannerShow && { x: 0, opacity: 1 }}
+      animate={
+        isBannerShow
+          ? { x: 0, opacity: 1 }
+          : isLeftSide
+          ? { x: -10, opacity: 0 }
+          : { x: 10, opacity: 0 }
+      }
       className="absolute top-[50%] -mt-12 sm:hidden flex"
     >
       <ResultPopup
@@ -409,11 +424,9 @@ const LargeBanner = ({
       />
       <motion.div
         style={position}
-        initial={{scale : 0}}
-        animate={isBannerShow && {scale : 1}}
-        transition={{delay : 0.15 * playerOrder}}
-        // initial={{ opacity: 0, y: 10 }}
-        // animate={isBannerShow && { opacity: 1, y: 0 }}
+        initial={{ scale: 0 }}
+        animate={isBannerShow ? { scale: 1 } : { scale: 0 }}
+        transition={{ delay: 0.15 * playerOrder }}
         className="absolute"
       >
         <motion.div
@@ -586,7 +599,11 @@ const ResultPopup = ({
   const { tableState } = useTableStateStore();
 
   useEffect(() => {
-    if (prevScoreRef.current !== undefined && score !== prevScoreRef.current) {
+    if (
+      prevScoreRef.current !== undefined &&
+      score !== prevScoreRef.current &&
+      score > prevScoreRef.current
+    ) {
       setMode("score");
       setIsShow(true);
     }
@@ -625,7 +642,7 @@ const ResultPopup = ({
     >
       <div>{mode === "score" ? "+1" : "-1"}</div>
       <div className="text-sm font-bold bg-gray-600 rounded-full px-1">
-        {mode === "score" ? "SCORE" : "CHANCE"}
+        {mode === "score" ? "POINT" : "CHANCE"}
       </div>
     </motion.div>
   );

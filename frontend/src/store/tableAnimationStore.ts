@@ -3,13 +3,15 @@ import { create } from "zustand";
 export interface TableAnimationState {
   tableQueues: string[];
   tableCurrentQueue: string;
-  addToTableQueue: (processes : string[]) => void;
+  addToTableQueue: (processes: string[]) => void;
   tableProcessNext: () => void;
+  clearTableQueue: () => void;
 }
 
 export const useTableAnimationStore = create<TableAnimationState>((set) => ({
   tableQueues: [],
   tableCurrentQueue: "default",
+  clearTableQueue: () => set(() => ({ tableQueues: [], tableCurrentQueue: "default" })),
   addToTableQueue: (queue) =>
     set((state) => {
       const newQueue = [...state.tableQueues, ...queue];
@@ -28,4 +30,3 @@ export const useTableAnimationStore = create<TableAnimationState>((set) => ({
       return { tableQueues: newQueue, tableCurrentQueue: nextMode };
     }),
 }));
-

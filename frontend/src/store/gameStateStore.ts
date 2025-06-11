@@ -17,6 +17,10 @@ export interface GameState {
   playersScore: number[];
   isOver: boolean;
   forcePlayerOrder: number;
+  lastGameStarterOrder: number; //might not necessary
+  lastRoundStarterOrder: number; //might not necessary
+  gameResult : number[]
+  endGameScore : number
   setCurrentState: (action: string) => void;
   setCards: (cards: number[]) => void;
   playCards: (indices: number[]) => void;
@@ -29,6 +33,7 @@ const initialState = {
   gameNumber: -1,
   turn: -1,
   round: -1,
+  endGameScore : -1,
   roundPlayCard: -1,
   cards: [],
   calledCards: [],
@@ -39,7 +44,10 @@ const initialState = {
   playersHandCount: [],
   playersScore: [],
   isOver: false,
+  lastGameStarterOrder: 0,
+  lastRoundStarterOrder: 0,
   forcePlayerOrder: -1,
+  gameResult : []
 };
 export const useGameStateStore = create<GameState>()((set) => ({
   ...initialState,
@@ -63,6 +71,8 @@ export const useGameStateStore = create<GameState>()((set) => ({
       cards: payload.cards ?? state.cards,
       calledCards: payload.calledCards ?? state.calledCards,
       isCallSuccess: payload.isCallSuccess ?? state.isCallSuccess,
+      gameResult : payload.gameResult ?? state.gameResult,
+      endGameScore : payload.state.endGameScore ?? state.endGameScore,
       forcePlayerOrder:
         payload.state.forcePlayerOrder ?? state.forcePlayerOrder,
       turn: payload.state?.turn ?? state.turn,
@@ -76,6 +86,10 @@ export const useGameStateStore = create<GameState>()((set) => ({
       playersHandCount:
         payload.state?.playersHandCount ?? state.playersHandCount,
       playersScore: payload.state?.playersScore ?? state.playersScore,
+      lastGameStarterOrder:
+        payload.state?.lastGameStarterOrder ?? state.lastGameStarterOrder,
+      lastRoundStarterOrder:
+        payload.state?.lastRoundStarterOrder ?? state.lastRoundStarterOrder,
       isOver: payload.state?.isOver ?? state.isOver,
     }));
   },

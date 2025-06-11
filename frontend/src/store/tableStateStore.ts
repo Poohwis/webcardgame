@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
-export type RingMode = "initial" | "start" | "boardSetupTwo"  ;
-export type PointerMode = "initial" | "pointing" ;
+export type RingMode = "initial" | "start" | "boardSetupTwo";
+export type PointerMode = "initial" | "pointing";
 export type TableState =
   | "initial"
   | "boardSetupOne"
@@ -21,6 +21,8 @@ export interface tableState {
   setTableState: (type: TableState) => void;
   setPointerState: (type: PointerMode) => void;
   setRingState: (type: RingMode) => void;
+  resetTableState: () => void;
+  resetPointerAndRingState: () => void;
 }
 
 export const useTableStateStore = create<tableState>((set) => ({
@@ -30,4 +32,7 @@ export const useTableStateStore = create<tableState>((set) => ({
   setTableState: (type) => set(() => ({ tableState: type })),
   setPointerState: (type) => set(() => ({ pointerState: type })),
   setRingState: (type) => set(() => ({ ringState: type })),
+  resetTableState: () => set(() => ({ tableState: "initial" })),
+  resetPointerAndRingState: () =>
+    set(() => ({ ringState: "initial", pointerState: "initial" })),
 }));

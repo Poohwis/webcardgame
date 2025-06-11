@@ -1,6 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import UserPanel from "../components/UserPanel";
 import { Action, Chat, User } from "../type";
 import ChatBox from "../components/ChatBox";
 import { handleWebSocketMessage } from "../utils/wsMessageHandler";
@@ -8,20 +7,30 @@ import { sendToServer } from "../utils/sendTosServer";
 import {
   sendNextGameMessageToServer,
   sendNextRoundMessageToServer,
-  sendStartMessageToServer,
 } from "../utils/sendToServerGameMessage";
 import { useGameStateStore } from "../store/gameStateStore";
 import PlayerActionContainer from "../components/PlayerActionButtonContainer";
 import CardContainer from "../components/CardContainer";
-import { useCardAnimationStore } from "../store/cardAnimationStore";
 import wait from "../utils/wait";
 import TableContainer from "../components/TableContainer";
 import UserBanner from "../components/UserBanner";
 import CallResultTextContainer from "../components/CallResultTextContainer";
 import GameNumberIndicator from "../components/GameNumberIndicator";
-import { AnnounceType, useAnnounceStore } from "../store/announceStore";
+import {
+  InGameAnnounceType,
+  useInGameAnnounceStore,
+} from "../store/inGameAnnounceStore";
 import { useTableStateStore } from "../store/tableStateStore";
-import StartButton from "../components/StartButton";
+import StartGameMenu from "../components/StartGameMenu";
+import GameEndModal from "../components/GameEndModal";
+import TempAnimationDisplay from "../components/_TempAnimationDisplay";
+import { useTableAnimationStore } from "../store/tableAnimationStore";
+import { useCardAnimationStore } from "../store/cardAnimationStore";
+import TempGameStatus from "../components/_TempGameStatus";
+import { useWindowSizeStore } from "../store/windowSizeState";
+import UserList from "../components/UserList";
+import UserNameEditButton from "../components/UserNameEditButton";
+import { useGeneralAnnounceStore } from "../store/generalAnnounceStore";
 
 const initialState = {
   ws: null as WebSocket | null,
@@ -34,6 +43,7 @@ const initialState = {
   users: [] as User[],
   eventslog: [] as string[],
   error: false,
+  errorMessage: "",
 };
 
 function reducer(state: typeof initialState, action: Action) {
@@ -56,6 +66,8 @@ function reducer(state: typeof initialState, action: Action) {
       return { ...state, eventslog: [...state.eventslog, action.payload] };
     case "SET_ERROR":
       return { ...state, error: true };
+    case "SET_ERRORMESSAGE":
+      return { ...state, errorMessage: action.payload };
     default:
       return state;
   }
@@ -70,16 +82,48 @@ export default function RoomPage() {
 
   const usersRef = useRef<User[]>([]);
   const gameStateStore = useGameStateStore();
-  const cardAnimationStore = useCardAnimationStore();
-  const { setAnnounce } = useAnnounceStore();
+  const { resetTableState, resetPointerAndRingState } = useTableStateStore();
+  const { resetGameState } = useGameStateStore();
+  const { clearTableQueue } = useTableAnimationStore();
+  const { clearQueue } = useCardAnimationStore();
+  const { setAnnounce } = useInGameAnnounceStore();
+  const { setIsSmallWindow } = useWindowSizeStore();
+  const generalAnnounceStore = useGeneralAnnounceStore();
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 640) {
+        setIsSmallWindow(window.innerWidth < 640);
+      } else {
+        setIsSmallWindow(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize(); // Initial check
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     usersRef.current = state.users;
   }, [state.users]);
 
+  const handleResetGame = () => {
+    resetTableState();
+    resetGameState();
+    clearQueue();
+    clearTableQueue();
+    resetPointerAndRingState();
+  };
+
   useEffect(() => {
     //TODO : change to use environment variable for ws
     gameStateStore.resetGameState();
+    resetTableState();
+
     const ws = new WebSocket(`ws://localhost:8080/ws/${wsId}`);
 
     const handleMessage = (e: MessageEvent) => {
@@ -88,7 +132,8 @@ export default function RoomPage() {
         dispatch,
         usersRef,
         gameStateStore,
-        cardAnimationStore
+        generalAnnounceStore,
+        handleResetGame
       );
     };
 
@@ -109,11 +154,14 @@ export default function RoomPage() {
     dispatch({ type: "SET_CHAT", payload: "" });
   };
 
-  const handleSendNameChange = () => {
-    if (state.displayName.length < 1 || state.displayName.length > 15) {
+  const handleSendNameChange = (newName: string) => {
+    // if (state.displayName.length < 1 || state.displayName.length > 16) {
+    if (newName.length < 1 || newName.length > 16) {
+      console.log("struck");
       return;
     }
-    const payload = { newName: state.displayName.trim() };
+    // const payload = { newName: state.displayName.trim() };
+    const payload = { newName: newName.trim() };
     sendToServer(state.ws, "nameChange", payload);
   };
 
@@ -121,19 +169,10 @@ export default function RoomPage() {
     navigate("/notfound");
     return null;
   }
-
-  // lines under this is temp for test TODO: DELETE
-  const handleSim = () => {
-    const ws = new WebSocket(`ws://localhost:8080/ws/${wsId}`);
-  };
-  const [show, setShow] = useState(true);
-  const [action, setAction] = useState("");
-  const [data, setData] = useState("");
-  const [payload, setPayload] = useState({});
-  useEffect(() => {
-    setPayload({ action: action, data: data });
-  }, [action, data]);
-  //end of temp
+  if (state.errorMessage !== "") {
+    navigate("/notfound", { state: { type: state.errorMessage } });
+    return null;
+  }
 
   const handleSelectCard = (index: number) => {
     setSelectedCardIndices((prev) => {
@@ -141,7 +180,7 @@ export default function RoomPage() {
         return prev.filter((i) => i !== index);
       } else {
         if (selectCardIndices.length == 3) {
-          setAnnounce(AnnounceType.CardSelectExceed);
+          setAnnounce(InGameAnnounceType.CardSelectExceed);
           return prev;
         }
         return [...prev, index];
@@ -251,15 +290,17 @@ export default function RoomPage() {
       gameStateStore.turn === state.order &&
       gameStateStore.forcePlayerOrder !== -1
     ) {
-      setAnnounce(AnnounceType.ForceThrowAll);
+      setAnnounce(InGameAnnounceType.ForceThrowAll);
     }
   }, [gameStateStore.forcePlayerOrder]);
 
-  const { tableState } = useTableStateStore();
-
   return (
-    <div className="w-screen h-screen bg-primary flex items-center justify-center overflow-hidden">
-      <StartButton ws={state.ws} users={state.users} roomUrl={wsId}/>
+    <div
+      className="w-screen h-screen flex items-center justify-center overflow-hidden
+    bg-radial from-primary via-lime-200 to-cyan-800"
+    >
+      <GameEndModal ws={state.ws} users={state.users} />
+      <StartGameMenu ws={state.ws} users={state.users} roomUrl={wsId} />
       <div className="relative max-w-screen-xl w-full h-full flex flex-col">
         {/* MAIN AREA*/}
         <div className="flex flex-1 flex-col relative w-full h-full">
@@ -295,20 +336,21 @@ export default function RoomPage() {
           </div>
         </div>
         {/* BOTTOM PANEL */}
-        <div className="w-full flex flex-col items-center justify-center px-4 pb-12 ">
+        <div className="w-full flex flex-col items-center justify-center px-4 sm:my-12 mb-4 space-y-4">
+          <div className="sm:translate-y-0">
+            <UserList users={state.users} />
+          </div>
           <ChatBox
             chats={state.chats}
             chatInput={state.chatInput}
             handleMessageSend={handleChatMessageSend}
             dispatch={dispatch}
           />
-          <UserPanel
-            users={state.users}
-            ws={state.ws}
+        </div>
+        <div className="absolute sm:bottom-12 sm:right-10 top-4 right-2 sm:top-auto">
+          <UserNameEditButton
             displayName={state.displayName}
             order={state.order}
-            roomUrl={wsId}
-            dispatch={dispatch}
             handleSendNameChange={handleSendNameChange}
           />
         </div>
@@ -321,76 +363,14 @@ export default function RoomPage() {
         ))}
       </div> */}
       {/* for test game logic panel */}
-      <button
-        className="text-sm absolute top-0 right-0 font-pixelify"
-        onClick={() => setShow(!show)}
-      >
-        show gameState
-      </button>
-      <button
-        className="text-sm absolute top-4 right-0 font-pixelify"
-        onClick={() => sendStartMessageToServer(state.ws)}
-      >
-        start
-      </button>
-      <div className={`absolute right-0 top-6 text-sm ${show ? "" : "hidden"}`}>
-        <div>playerOrder : {state.order}</div>
-        <div>gameState: {gameStateStore.currentState}</div>
-        <div>tableState: {tableState}</div>
-        <div>turn: {gameStateStore.turn}</div>
-        <div>gameNumber: {gameStateStore.gameNumber}</div>
-        <div>round: {gameStateStore.round}</div>
-        <div>roundPlayCard: {gameStateStore.roundPlayCard}</div>
-        <div>isOver: {gameStateStore.isOver.toString()}</div>
-        <div>playersChance: {gameStateStore.playersChance}</div>
-        <div>playersHandCount: {gameStateStore.playersHandCount}</div>
-        <div>playersScore: {gameStateStore.playersScore}</div>
-        <div>lastPlayedBy: {gameStateStore.lastPlayedBy.slice(-1)}</div>
-        <div>lastPlayedCardCount: {gameStateStore.lastPlayedCardCount}</div>
-        <div>cards: {gameStateStore.cards}</div>
-        <div>selected : {selectCardIndices}</div>
-        <div>calledCards: {gameStateStore.calledCards}</div>
-        <div>isCallSuccess: {gameStateStore.isCallSuccess.toString()}</div>
-        <div>forcePlayOrder: {gameStateStore.forcePlayerOrder}</div>
-        <div>isSending: {isSending.toString()}</div>
-        <div className="flex flex-col">
-          <a href="http://localhost:5173" className="border border-black px-2">
-            home
-          </a>
-          <a
-            href={`http://localhost:5173/ws/${wsId}`}
-            rel="noopener noreferrer"
-            target="_blank"
-            className="border border-black px-1"
-          >
-            NewInstant
-          </a>
-          <button className="border border-black px-1" onClick={handleSim}>
-            add player
-          </button>
-          <button
-            className="border border-black px-1"
-            onClick={() => sendStartMessageToServer(state.ws)}
-          >
-            Start
-          </button>
-          <div>action</div>
-          <input
-            type="text"
-            value={action}
-            onChange={(e) => setAction(e.target.value)}
-          />
-          <div>data</div>
-          <input
-            type="text"
-            value={data}
-            onChange={(e) => setData(e.target.value)}
-          />
-          <button onClick={() => sendToServer(state.ws, "game", payload)}>
-            send
-          </button>
-        </div>
-      </div>
+      <TempGameStatus
+        state={state}
+        isSending={isSending}
+        selectCardIndices={selectCardIndices}
+        wsId={wsId}
+      />
+      <TempAnimationDisplay />
+      
     </div>
   );
 }

@@ -6,8 +6,9 @@ import {
 } from "../store/cardAnimationStore";
 import Card, { CARD_WIDTH } from "./Card";
 import { cn } from "../utils/cn";
-import { AnnounceMessages, useAnnounceStore } from "../store/announceStore";
+import { InGameAnnounceMessages, useInGameAnnounceStore } from "../store/inGameAnnounceStore";
 import { useTableStateStore } from "../store/tableStateStore";
+import { useWindowSizeStore } from "../store/windowSizeState";
 
 interface CardContainerProps {
   cards: number[];
@@ -24,12 +25,17 @@ export default function CardContainer({
   const cardX = Array.from({ length: 5 }, () => useMotionValue(0));
   const cardY = Array.from({ length: 5 }, () => useMotionValue(0));
   const ref = useRef<HTMLDivElement>(null);
-  const [windowWidth, setWindowWidth] = useState(0);
   const [memoCards, setMemoCards] = useState<number[]>(cards);
   const [isCardSelectable, setIsCardSelectable] = useState(false);
   const [isPlayable, setIsPlayable] = useState(false);
-  const [isSmallWindow, setIsSmallWindow] = useState(false);
   const { tableState } = useTableStateStore();
+  const {
+    setWindowWidth,
+    setIsSmallWindow,
+    isSmallWindow,
+    windowWidth,
+    setCardContainerPosition,
+  } = useWindowSizeStore();
 
   useEffect(() => {
     setMemoCards((prev) =>
@@ -43,6 +49,7 @@ export default function CardContainer({
     const handleResize = () => {
       if (ref.current) {
         setWindowWidth(ref.current.offsetWidth);
+        setCardContainerPosition(ref.current.getBoundingClientRect().top);
         if (ref.current.offsetWidth < 640) {
           setIsSmallWindow(true);
         } else {
@@ -301,17 +308,31 @@ export default function CardContainer({
   const flip = Array.from({ length: 5 }, () => true);
   const [flippedCards, setFlippedCards] = useState<boolean[]>(flip);
 
-  const { announceState, resetAnnounce } = useAnnounceStore();
+  const { announceState, resetAnnounce } = useInGameAnnounceStore();
 
   useEffect(() => {
     if (announceState) {
       const timeout = setTimeout(() => {
         resetAnnounce();
-      }, 2000); // 2 seconds
+      }, 2000); 
 
       return () => clearTimeout(timeout);
     }
   }, [announceState]);
+
+  const [isCardContainerShow, setIsCardContainerShow] = useState(false);
+  useEffect(() => {
+    if (tableState === "boardSetupOne") {
+      setIsCardContainerShow(true);
+    }
+    if (tableState === "initial") {
+      //reset the position and selectable of card state
+      cardY.forEach((y) => y.set(0));
+      setIsCardSelectable(false);
+
+      setIsCardContainerShow(false);
+    }
+  }, [tableState]);
 
   return (
     <>
@@ -319,13 +340,20 @@ export default function CardContainer({
         ref={ref}
         style={{ pointerEvents: isPlayable ? "auto" : "none" }}
         className={cn(
-          "overflow-hidden relative items-center flex flex-row max-h-[300px] h-[300px] max-w-[640px] w-full sm:rounded-full rounded-3xl bg--500"
+          "overflow-hidden relative items-center flex flex-row",
+           "sm:h-[300px] h-[250px] max-w-[640px] w-full sm:rounded-full rounded-3xl"
         )}
       >
         <motion.div
           initial={{ width: 0, height: 0 }}
           animate={
-            tableState === "boardSetupOne" && { width: "100%", height: 300, borderWidth : 10 }
+            isCardContainerShow
+              ? {
+                  width: "100%",
+                  height: isSmallWindow ? 250 : 300,
+                  borderWidth: 10,
+                }
+              : { width: 0, height: 0 }
           }
           className="absolute left-[50%] -translate-x-[50%] 
        bg-darkgreen  sm:rounded-full rounded-3xl border-lightgreen "
@@ -339,7 +367,7 @@ export default function CardContainer({
               className="absolute  bottom-8
        font-pixelify text-sm px-1 text-white/80 rounded-full text-nowrap"
             >
-              {AnnounceMessages[announceState]}
+              {InGameAnnounceMessages[announceState]}
             </motion.div>
           )}
         </AnimatePresence>

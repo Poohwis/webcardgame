@@ -4,7 +4,7 @@ export type User = {
 };
 
 export type Chat = {
-  isAnnounce?: "in" | "out" | "nameChange";
+  announceType?: "in" | "out" | "nameChange";
   displayName: string;
   order: number;
   message: string;
@@ -21,7 +21,8 @@ export type Action =
   | { type: "UPDATE_USERS"; payload: User[] }
   | { type: "ADD_EVENT"; payload: string }
   | { type: "SET_ERROR" }
-  | { type: "SET_CARD"; payload: number[] };
+  | { type: "SET_CARD"; payload: number[] }
+  | { type: "SET_ERRORMESSAGE"; payload: string };
 
 // export type State = {
 //   ws: WebSocket | null;
@@ -39,10 +40,12 @@ export type InitializeSlotMessage = {
   type: "initializeSlot";
   payload: { displayName: string; order: number };
 };
+
 export type UpdateUserListMessage = {
   type: "updateUserList";
   payload: { users: User[] };
 };
+
 export type ChatMessage = {
   type: "chat";
   payload: {
@@ -51,6 +54,12 @@ export type ChatMessage = {
   };
 };
 
+export type ErrorMessage = {
+  type: "error";
+  payload: {
+    type: string;
+  };
+};
 export type AnnounceMessage = {
   type: "in" | "out";
   payload: { order: number; displayName: string };
@@ -58,8 +67,13 @@ export type AnnounceMessage = {
 
 export type NameChangeMessage = {
   type: "nameChange";
-  payload: { displayName: string; prevName: string; order: number };
+  payload: {displayName: string; prevName: string; order: number };
 };
+
+export type NameChangeStatus = {
+  type : "nameChangeStatus" ;
+  payload : {isReject : boolean, name: string}
+}
 
 export type StartGameMessage = {
   type: "game";
@@ -93,6 +107,14 @@ export type toNextGameGameMessage = {
   type: "game";
   payload: { action: "toNextGame" };
 };
+export type gameResult = {
+  type: "game";
+  payload: { action: "gameResult"; gameResult: number[] };
+};
+export type reset = {
+  type: "game";
+  payload: { action: "initial" };
+};
 
 export type GameMessage =
   | StartGameMessage
@@ -102,11 +124,14 @@ export type GameMessage =
   | WaitGameMessage
   | NextGameRequestGameMessage
   | toNextRoundGameMessage
-  | toNextGameGameMessage;
+  | toNextGameGameMessage
+  | gameResult
+  | reset;
 export type MessageEventPayload =
   | InitializeSlotMessage
   | UpdateUserListMessage
   | ChatMessage
   | AnnounceMessage
-  | NameChangeMessage
-  | GameMessage;
+  | NameChangeMessage|NameChangeStatus
+  | GameMessage
+  | ErrorMessage;

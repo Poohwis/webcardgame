@@ -5,6 +5,10 @@ import (
 	"math/rand"
 	"sync"
 	"time"
+
+	"slices"
+
+	"github.com/gorilla/websocket"
 )
 
 type ServerGameState struct {
@@ -14,43 +18,63 @@ type ServerGameState struct {
 }
 
 type ClientGameState struct {
-	Turn                int   `json:"turn"` //1-based index, represent the current player's turn
-	GameNumber          int   `json:"gameNumber"`
-	Round               int   `json:"round"`         //1-based index
-	RoundPlayCard       int   `json:"roundPlayCard"` //0-based index
-	PlayersChance       []int `json:"playersChance"`
-	PlayersHandCount    []int `json:"playersHandCount"`
-	Playerscore         []int `json:"playersScore"`
-	IsOver              bool  `json:"isOver"`
-	LastPlayedBy        []int `json:"lastPlayedBy"` //1-based index, the last player who played
-	LastPlayedCardCount int   `json:"lastPlayedCardCount"`
-	ForcePlayerOrder    int   `json:"forcePlayerOrder"` //1-based index, Order of player which force to play all their hand / call
-	mu                  sync.Mutex
+	Turn                  int   `json:"turn"` //1-based index, represent the current player's turn
+	GameNumber            int   `json:"gameNumber"`
+	Round                 int   `json:"round"`         //1-based index
+	RoundPlayCard         int   `json:"roundPlayCard"` //0-based index
+	PlayersChance         []int `json:"playersChance"`
+	PlayersHandCount      []int `json:"playersHandCount"`
+	Playerscore           []int `json:"playersScore"`
+	IsOver                bool  `json:"isOver"`
+	LastPlayedBy          []int `json:"lastPlayedBy"` //1-based index, the last player who played
+	LastPlayedCardCount   int   `json:"lastPlayedCardCount"`
+	ForcePlayerOrder      int   `json:"forcePlayerOrder"`      //1-based index, Order of player which force to play all their hand / call
+	LastGameStarterOrder  int   `json:"lastGameStarterOrder"`  //1-based index
+	LastRoundStarterOrder int   `json:"lastRoundStarterOrder"` //1-based index
+	EndGameScore          int   `json:"endGameScore"`
+	mu                    sync.Mutex
 }
 
 // TODO: hard coded the game condition of player for now, may change if want this to be configurable
-func NewGameState(numPlayers int) (*ClientGameState, *ServerGameState) {
+func NewGameState(slots [4]*websocket.Conn, endGameScore int) (*ClientGameState, *ServerGameState) {
 	c := &ClientGameState{
-		Turn:                1,
-		GameNumber:          1,
-		Round:               1,
-		RoundPlayCard:       -1,
-		Playerscore:         make([]int, numPlayers),
-		PlayersHandCount:    make([]int, numPlayers),
-		PlayersChance:       make([]int, numPlayers),
-		LastPlayedBy:        []int{},
-		LastPlayedCardCount: 0,
-		ForcePlayerOrder:    -1,
-		IsOver:              false,
+		Turn:                  1,
+		GameNumber:            1,
+		Round:                 1,
+		RoundPlayCard:         -1,
+		Playerscore:           make([]int, len(slots)),
+		PlayersHandCount:      make([]int, len(slots)),
+		PlayersChance:         make([]int, len(slots)),
+		LastPlayedBy:          []int{},
+		LastPlayedCardCount:   0,
+		ForcePlayerOrder:      -1,
+		LastGameStarterOrder:  0,
+		LastRoundStarterOrder: 0,
+		IsOver:                false,
+		EndGameScore:          endGameScore,
 	}
 
-	for i := range c.PlayersHandCount {
-		c.PlayersHandCount[i] = 5
-		c.PlayersChance[i] = 2
+	for i := range slots {
+		if slots[i] != nil {
+			c.LastGameStarterOrder = i + 1
+			c.LastRoundStarterOrder = i + 1
+			c.Turn = i + 1
+			break
+		}
+	}
+
+	for i := range slots {
+		if slots[i] != nil {
+			c.PlayersHandCount[i] = 5
+			c.PlayersChance[i] = 2
+		} else {
+			c.PlayersHandCount[i] = 0
+			c.PlayersChance[i] = 0
+		}
 	}
 
 	s := &ServerGameState{
-		PlayersHand: make([][]int, numPlayers),
+		PlayersHand: make([][]int, len(slots)),
 		OnTableCard: []int{},
 	}
 
@@ -58,36 +82,58 @@ func NewGameState(numPlayers int) (*ClientGameState, *ServerGameState) {
 	return c, s
 }
 
-// TODO: Make it start at next player
-func (c *ClientGameState) NextGame(s *ServerGameState) {
+func (c *ClientGameState) isEndGameScoreMeet() bool {
+	return slices.Contains(c.Playerscore, c.EndGameScore)
+}
+func (c *ClientGameState) NextGame(s *ServerGameState, slots [4]*websocket.Conn) bool {
+	//TODO: check that endGameScore meet,true - output endgame to client
 	c.mu.Lock()
+	if c.isEndGameScoreMeet() {
+		c.mu.Unlock()
+		return true
+	}
+
 	c.GameNumber++
-	c.Turn = ((c.GameNumber - 1) % len(c.PlayersHandCount)) + 1
+	for i := 0; i < len(slots); i++ {
+		next := (c.LastGameStarterOrder + i) % len(slots)
+		if slots[next] != nil {
+			c.Turn = next + 1
+			c.LastGameStarterOrder = next + 1
+			c.LastRoundStarterOrder = next + 1
+			break
+		}
+	}
 	c.Round = 1
-	c.PlayersHandCount = make([]int, len(c.PlayersHandCount))
-	c.PlayersChance = make([]int, len(c.PlayersHandCount))
+	c.PlayersHandCount = make([]int, len(slots))
+	c.PlayersChance = make([]int, len(slots))
 	c.LastPlayedBy = []int{}
 	c.IsOver = false
 	c.ForcePlayerOrder = -1
 	c.mu.Unlock()
 
-	for i := range c.PlayersHandCount {
-		c.PlayersHandCount[i] = 5
-		c.PlayersChance[i] = 2
+	for i := range slots {
+		if slots[i] != nil {
+			c.PlayersHandCount[i] = 5
+			c.PlayersChance[i] = 2
+		} else {
+			c.PlayersHandCount[i] = 0
+			c.PlayersChance[i] = 0
+		}
 	}
 
 	c.generateDeck(s)
+	return false
 }
 
 // use this after call check
 func (c *ClientGameState) checkIsGameEnd() {
 	count := 0
-	winnerOrder := -1
+	scorerOrder := -1
 
 	for i, chance := range c.PlayersChance {
 		if chance != 0 {
-			if winnerOrder == -1 {
-				winnerOrder = i + 1
+			if scorerOrder == -1 {
+				scorerOrder = i + 1
 			} else {
 				return
 			}
@@ -101,8 +147,8 @@ func (c *ClientGameState) checkIsGameEnd() {
 	}
 
 	if c.IsOver {
-		c.addScore(winnerOrder)
-		log.Printf("Gameover winnerOrder: %v", winnerOrder)
+		c.addScore(scorerOrder)
+		log.Printf("PlayerOrder scored: %v", scorerOrder)
 	}
 }
 
@@ -236,18 +282,25 @@ func (c *ClientGameState) nextTurn() {
 	c.mu.Unlock()
 }
 
-func (c *ClientGameState) NextRound(s *ServerGameState) {
+func (c *ClientGameState) NextRound(s *ServerGameState, slots [4]*websocket.Conn) {
 	c.mu.Lock()
-	startOrder := c.Round
-	for {
-		startOrder = (startOrder % len(c.PlayersHandCount)) + 1
-		if c.PlayersChance[startOrder-1] != 0 {
+	for i := 0; i < len(slots); i++ {
+		next := (c.LastRoundStarterOrder + i) % len(slots)
+		if slots[next] != nil && c.PlayersChance[next] != 0 {
+			c.Turn = next + 1
+			c.LastRoundStarterOrder = next + 1
 			break
 		}
 	}
+	// for {
+	// 	startOrder = (startOrder % len(c.PlayersHandCount)) + 1
+	// 	if c.PlayersChance[startOrder-1] != 0 {
+	// 		break
+	// 	}
+	// }
 
 	c.Round++
-	c.Turn = startOrder
+	// c.Turn = startOrder
 	for i, playerChance := range c.PlayersChance {
 		if playerChance != 0 {
 			c.PlayersHandCount[i] = 5
@@ -277,4 +330,62 @@ func (c *ClientGameState) addScore(playerOrder int) {
 	playerIndex := playerOrder - 1
 	c.Playerscore[playerIndex] += 1
 	log.Printf("%v score added: %v", playerOrder, c.Playerscore[playerIndex])
+}
+
+func (c *ClientGameState) SetLeavePlayer(playerOrder int, slots [4]*websocket.Conn) (bool, bool, int) {
+	c.mu.Lock()
+
+	playerIndex := playerOrder - 1
+	if playerIndex < 0 || playerIndex >= len(c.PlayersChance) {
+		log.Printf("Invalid playerOrder: %v", playerOrder)
+		return false, false, -1
+	}
+
+	c.PlayersHandCount[playerIndex] = 0
+	c.PlayersChance[playerIndex] = 0
+
+	isOnlyOnePlayerLeft := false
+	isGoToNextGame := false
+	skipToTurn := -1
+
+	remainingPlayer := 0
+	activePlayer := []int{}
+
+	for i := range slots {
+		if slots[i] != nil {
+			remainingPlayer++
+		}
+		if c.PlayersChance[i] != 0 {
+			activePlayer = append(activePlayer, i)
+		}
+	}
+	c.mu.Unlock()
+	if len(activePlayer) == 1 {
+		isGoToNextGame = true
+		activePlayerOrder := activePlayer[0] + 1
+		log.Printf("PlayerOrder: %v gain the point; Go next game", activePlayerOrder)
+		c.addScore(activePlayerOrder)
+	}
+
+	if remainingPlayer == 1 {
+		log.Printf("Only 1 player remains in the room - Game ended")
+		isOnlyOnePlayerLeft = true
+		return isOnlyOnePlayerLeft, isGoToNextGame, skipToTurn
+	}
+
+	log.Printf("Removed player order: %v", playerOrder)
+
+	if c.Turn == playerOrder {
+		for i := 1; i <= len(c.PlayersChance); i++ {
+			nextTurn := (playerOrder + i - 1) % len(c.PlayersChance)
+			if c.PlayersChance[nextTurn] > 0 {
+				c.Turn = nextTurn + 1
+				skipToTurn = c.Turn
+				log.Printf("PlayerOrder: %v left on their turn, skipped to turn: %v", playerOrder, c.Turn)
+				return isOnlyOnePlayerLeft, isGoToNextGame, skipToTurn
+			}
+		}
+	}
+
+	return isOnlyOnePlayerLeft, isGoToNextGame, skipToTurn
 }

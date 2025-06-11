@@ -8,6 +8,7 @@ import {
 import { cn } from "../utils/cn";
 import { CardsArt } from "./CardsArt";
 import { useState } from "react";
+import {CARDSNAME} from "../constant"
 
 interface CardProps {
   cardX: MotionValue<number>;
@@ -31,8 +32,7 @@ export default function Card({
   card,
   memoCard,
 }: CardProps) {
-  const cardsName = ["ACE", "JACK", "KING", "QUEEN", "JOKER"];
-  const [hover, setHover] =useState(false)
+  const [hover, setHover] = useState(false);
 
   // Track mouse position within the card
   const rotateX = useMotionValue(0);
@@ -71,9 +71,9 @@ export default function Card({
     card !== -1
       ? card === 4
         ? "JK"
-        : cardsName[card][0]
+        : CARDSNAME[card][0]
       : memoCard !== 4
-      ? cardsName[memoCard][0]
+      ? CARDSNAME[memoCard][0]
       : "JK";
   return (
     <motion.div
@@ -90,8 +90,8 @@ export default function Card({
         style={{
           transformStyle: "preserve-3d",
         }}
-        onHoverStart={()=>setHover(true)}
-        onHoverEnd={()=>setHover(false)}
+        onHoverStart={() => setHover(true)}
+        onHoverEnd={() => setHover(false)}
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{ duration: 0.4, ease: "easeInOut" }}
       >
@@ -123,13 +123,20 @@ export default function Card({
           }}
         >
           <div className="flex flex-col relative items-center justify-center text-xl w-full h-full bg-red-800 rounded-lg overflow-hidden">
-          <div className="z-10 w-[90px] self-start absolute top-1 left-1  text-sm text-white leading-3">liar's card</div>
-          <div className="z-10 w-[90px] self-end rotate-180 absolute bottom-1 right-1 text-sm text-white leading-3">liar's card</div>
+            <div className="z-10 w-[90px] self-start absolute top-1 left-1  text-sm text-white leading-3">
+              liar's card
+            </div>
+            <div className="z-10 w-[90px] self-end rotate-180 absolute bottom-1 right-1 text-sm text-white leading-3">
+              liar's card
+            </div>
             {Array.from({ length: 20 }).map((_, index) => (
               <div
-              key={index}
-                style={{ width: 200 - index*10, height: 200 -index*10, }}
-                className={ cn( "absolute rounded-full", index % 2 === 0 ? "bg-red-800" : "bg-red-900"  )}
+                key={index}
+                style={{ width: 200 - index * 10, height: 200 - index * 10 }}
+                className={cn(
+                  "absolute rounded-full",
+                  index % 2 === 0 ? "bg-red-800" : "bg-red-900"
+                )}
               />
             ))}
           </div>

@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
 import WaveTextWrapper from "./WaveTextWrapper";
 import { PCOLOR } from "../constant";
 import { useGameStateStore } from "../store/gameStateStore";
 import { useTableStateStore } from "../store/tableStateStore";
+import { motion } from "motion/react";
 
 export default function CallResultTextContainer() {
-  const [mode, setMode] = useState<"success" | "fail">("success");
   const [isCallSuccess, setIsCallSuccess] = useState(false);
   const [isCallFail, setIsCallFail] = useState(false);
   const { turn } = useGameStateStore();
   const { tableState } = useTableStateStore();
+  const { currentState } = useGameStateStore();
   const [color, setColor] = useState("");
 
   useEffect(() => {
@@ -45,28 +45,32 @@ export default function CallResultTextContainer() {
 
   return (
     <>
-      <ResultText
-        text={"CALL"}
-        color={color}
-        textTrigger={isCallSuccess}
-        topPosition="45%"
-        onWaveEnd={() => setIsCallSuccess(false)}
-      />
-      <ResultText
-        text={"SUCCESS"}
-        color={color}
-        textTrigger={isCallSuccess}
-        topPosition="60%"
-        onWaveEnd={() => setIsCallSuccess(false)}
-      />
+      {currentState !== "initial" && (
+        <>
+          <ResultText
+            text={"CALL"}
+            color={color}
+            textTrigger={isCallSuccess}
+            topPosition="45%"
+            onWaveEnd={() => setIsCallSuccess(false)}
+          />
+          <ResultText
+            text={"SUCCESS"}
+            color={color}
+            textTrigger={isCallSuccess}
+            topPosition="60%"
+            onWaveEnd={() => setIsCallSuccess(false)}
+          />
 
-      <ResultText
-        text={"CALL FAIL"}
-        color={"#374151"}
-        textTrigger={isCallFail}
-        topPosition="55%"
-        onWaveEnd={() => setIsCallFail(false)}
-      />
+          <ResultText
+            text={"CALL FAIL"}
+            color={"#374151"}
+            textTrigger={isCallFail}
+            topPosition="55%"
+            onWaveEnd={() => setIsCallFail(false)}
+          />
+        </>
+      )}
     </>
   );
 }
@@ -92,7 +96,7 @@ const ResultText = ({
         color,
         top: topPosition,
       }}
-      className="z-[100] absolute left-[50%] -translate-x-[50%]
+      className="z-[100] absolute left-[50%] -translate-x-[50%] -skew-y-12
         font-nippo font-extrabold sm:text-[100px] text-6xl text-nowrap hover:cursor-default"
     >
       <WaveTextWrapper textTrigger={textTrigger} onWaveEnd={onWaveEnd}>

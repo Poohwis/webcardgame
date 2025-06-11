@@ -3,7 +3,6 @@ import Home from "./pages/Home";
 import Room from "./pages/Room";
 import NotFound from "./pages/NotFound";
 
-
 export default function App() {
   return (
     <Router>
@@ -11,6 +10,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/ws/:wsId" element={<Room />} />
         <Route path="/notfound" element={<NotFound />} />
+        <Route path="*" element={<NotFound />}></Route>
       </Routes>
     </Router>
   );

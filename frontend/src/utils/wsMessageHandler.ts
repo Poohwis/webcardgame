@@ -1,17 +1,21 @@
-import { CardAnimationState } from "../store/cardAnimationStore";
 import { GameState } from "../store/gameStateStore";
-import { Action,  MessageEventPayload, User } from "../type";
+import {
+  GeneralAnnounceState,
+  GeneralAnnounceType,
+} from "../store/generalAnnounceStore";
+import { Action, MessageEventPayload, User } from "../type";
 import handleGameAction from "./handleGameAction";
 
 export function handleWebSocketMessage(
   e: MessageEvent,
   dispatch: React.Dispatch<Action>,
   usersRef: React.MutableRefObject<User[]>,
-  gameStateStore : GameState,
-  cardAnimationStore : CardAnimationState
+  gameStateStore: GameState,
+  generalAnnounceStore: GeneralAnnounceState,
+  handleResetGame: () => void
 ) {
   const message: MessageEventPayload = JSON.parse(e.data);
-  console.log(message)
+  console.log(message);
   const { type, payload } = message;
 
   switch (type) {
@@ -29,15 +33,14 @@ export function handleWebSocketMessage(
         (u: User) => u.order === payload.order
       );
       if (user) {
-      dispatch({
-        type: "ADD_CHAT",
-        payload: {
-          displayName: user?.displayName,
-          order: payload.order,
-          message: payload.message,
-        },
-      });
-
+        dispatch({
+          type: "ADD_CHAT",
+          payload: {
+            displayName: user?.displayName,
+            order: payload.order,
+            message: payload.message,
+          },
+        });
       }
       break;
 
@@ -45,7 +48,7 @@ export function handleWebSocketMessage(
       dispatch({
         type: "ADD_CHAT",
         payload: {
-          isAnnounce: "in",
+          announceType: "in",
           order: payload.order,
           displayName: payload.displayName,
           message: "",
@@ -57,7 +60,7 @@ export function handleWebSocketMessage(
       dispatch({
         type: "ADD_CHAT",
         payload: {
-          isAnnounce: "out",
+          announceType: "out",
           order: payload.order,
           displayName: payload.displayName,
           message: "",
@@ -69,7 +72,7 @@ export function handleWebSocketMessage(
       dispatch({
         type: "ADD_CHAT",
         payload: {
-          isAnnounce: "nameChange",
+          announceType: "nameChange",
           order: payload.order,
           displayName: payload.displayName,
           prevName: payload.prevName,
@@ -77,10 +80,28 @@ export function handleWebSocketMessage(
         },
       });
       break;
-      
-      case "game" :
-        handleGameAction(payload, gameStateStore, cardAnimationStore)
-        break
+
+    case "nameChangeStatus":
+      if (payload.isReject) {
+        generalAnnounceStore.setGeneralAnnounce(
+          GeneralAnnounceType.RejectNameChange
+        );
+        dispatch({ type: "SET_DISPLAYNAME", payload: payload.name });
+        return;
+      }
+      generalAnnounceStore.setGeneralAnnounce(
+        GeneralAnnounceType.SuccessNameChange
+      );
+        dispatch({ type: "SET_DISPLAYNAME", payload: payload.name });
+      break;
+
+    case "game":
+      handleGameAction(payload, gameStateStore, handleResetGame);
+      break;
+
+    case "error":
+      dispatch({ type: "SET_ERRORMESSAGE", payload: payload.type });
+      break;
 
     default:
       console.warn("Unhandled message type:", message);
