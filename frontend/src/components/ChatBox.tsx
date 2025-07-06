@@ -3,6 +3,8 @@ import { Action, Chat } from "../type";
 import ChatItem from "./ChatItem";
 import { cn } from "../utils/cn";
 import { motion } from "motion/react";
+import { useWindowSizeStore } from "../store/windowSizeStateStore";
+import { useKeyboardStore } from "../store/keyboardStore";
 
 interface ChatBoxProps {
   chats: Chat[];
@@ -30,48 +32,49 @@ export default function ChatBox({
   //   };
   // }, [mode]);
   useEffect(() => {
-    //TODO : add that if the user manually scroll disable auto scroll and active again when reach bottom
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [chats]);
   return (
-    <motion.div
-      initial={{ width: "50%", opacity: 0, scale: 0 }}
-      whileInView={{ opacity: 1, scale: 1 }}
-      className={cn(
-        "font-nippo h-[160px] sm:flex hidden flex-col m-4 bg-gray-900/70 shadow-md shadow-gray-800 rounded-md px-2 pb-2 "
-      )}
-    >
-      <div className="flex flex-row justify-between">
-        <div className="text-sm text-white/80 px-2 mt-2">
-          Message box
-        </div>
-        <button className="text-gray">-</button>
-      </div>
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto space-y-1 my-1 scrollbar"
+    <>
+      <motion.div
+        style={{ width: "19vw" }}
+        initial={{ opacity: 0, scale: 0 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        className={cn(
+          "font-nippo sm:h-[150px] lg:flex hidden flex-col m-4",
+          "bg-gray-900/70 shadow-md shadow-gray-800",
+          "rounded-md px-2 pb-2 "
+        )}
       >
-        <ChatItem chats={chats} />
-      </div>
-      <div className="flex items-center flex-row ">
-        <input
-          ref={inputRef}
-          type="text"
-          className="font-nippo pl-1 rounded-md w-full bg-gray-800 focus:outline-none caret-gray-400 text-white/80 text-sm py-[2px]"
-          value={chatInput}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              if (chatInput.trim() === "") return;
-              handleMessageSend("chat");
+        <div className="flex flex-row justify-between">
+          <div className="text-sm text-white/80 px-2 mt-2">Message box</div>
+        </div>
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto space-y-1 my-1 scrollbar"
+        >
+          <ChatItem chats={chats} />
+        </div>
+        <div className="flex items-center flex-row ">
+          <input
+            ref={inputRef}
+            type="text"
+            className="font-nippo pl-1 rounded-md w-full bg-gray-800 focus:outline-none caret-gray-400 text-white/80 text-sm py-[2px]"
+            value={chatInput}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                if (chatInput.trim() === "") return;
+                handleMessageSend("chat");
+              }
+            }}
+            onChange={(e) =>
+              dispatch({ type: "SET_CHAT", payload: e.target.value })
             }
-          }}
-          onChange={(e) =>
-            dispatch({ type: "SET_CHAT", payload: e.target.value })
-          }
-        />
-      </div>
-    </motion.div>
+          />
+        </div>
+      </motion.div>
+    </>
   );
 }

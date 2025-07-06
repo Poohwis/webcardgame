@@ -74,11 +74,10 @@
     background-clip: text;
     -webkit-background-clip: text;
     /* background-image: url(https://media.giphy.com/media/xULW8Fw2ZhznUptrYA/giphy.gif); */
-    background-image:
-     url(https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTVzYWc3MzYyNHBsN3F5bTFub2Jwa25iemFjMDN1MHBsbTZpaW55ZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/FpUcEs9flCUW3e2q5I/giphy.gif);
+    background-image: url(https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTVzYWc3MzYyNHBsN3F5bTFub2Jwa25iemFjMDN1MHBsbTZpaW55ZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/FpUcEs9flCUW3e2q5I/giphy.gif);
     background-size: cover;
     background-position: center;
-    filter : hue-rotate(0deg) saturate(0) brightness(1.0)
+    filter: hue-rotate(0deg) saturate(0) brightness(1);
   }
 }
 

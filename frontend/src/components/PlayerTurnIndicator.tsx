@@ -3,7 +3,7 @@ import { User } from "../type";
 import { useTableStateStore } from "../store/tableStateStore";
 import { useGameStateStore } from "../store/gameStateStore";
 import { PCOLOR } from "../constant";
-import { useWindowSizeStore } from "../store/windowSizeState";
+import { useWindowSizeStore } from "../store/windowSizeStateStore";
 
 interface PlayerTurnIndicatorProps {
   users: User[];

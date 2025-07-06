@@ -18,8 +18,8 @@ import PlayerTurnIndicator from "./PlayerTurnIndicator";
 import CallResultIndicator from "./CallResultIndicator";
 import RoundPlayedCardIndicator from "./RoundPlayedCardIndicator";
 import { cn } from "../utils/cn";
-import { useWindowSizeStore } from "../store/windowSizeState";
-import { CARDSNAME } from "../constant"
+import { useWindowSizeStore } from "../store/windowSizeStateStore";
+import { CARDSNAME } from "../constant";
 import CallRipple from "./CallRipple";
 
 export const ONTABLECARD_WIDTH = 100;
@@ -98,7 +98,7 @@ export default function TableContainer({
     useCardAnimationStore();
   const { addToTableQueue, tableProcessNext, tableCurrentQueue } =
     useTableAnimationStore();
-  const { isSmallWindow} = useWindowSizeStore();
+  const { isSmallWindow, windowHeight } = useWindowSizeStore();
 
   useEffect(() => {
     const tableStartAnimation = [
@@ -726,14 +726,30 @@ export default function TableContainer({
 
   const [tableSize, setTableSize] = useState(400);
   useEffect(() => {
-    const largeTableDimension = 400;
+    // const largeTableDimension = 400;
     const smallTableDimension = 250;
     if (isSmallWindow) {
       setTableSize(smallTableDimension);
     } else {
-      setTableSize(largeTableDimension);
+      const calTableSize = () => {
+        const minH = 960;
+        const maxH = 1270;
+        const minPx = 320;
+        const maxPx = 400;
+
+        let interpolated = minPx;
+        if (windowHeight <= minH) interpolated = minPx;
+        else if (windowHeight >= maxH) interpolated = maxPx;
+        else {
+          const t = (windowHeight - minH) / (maxH - minH);
+          interpolated = minPx + t * (maxPx - minPx);
+        }
+
+        setTableSize(interpolated);
+      };
+      calTableSize()
     }
-  }, [isSmallWindow]);
+  }, [isSmallWindow, windowHeight]);
 
   const outerRingColor = [
     "bg-[#c6ded7]",
@@ -762,7 +778,7 @@ export default function TableContainer({
         <CallRipple />
         <PlayCardRingIndicator
           radius={156}
-          size={isSmallWindow ? 250 : 400}
+          size={tableSize}
           text={
             CARDSNAME[roundPlayCard]
               ? CARDSNAME[roundPlayCard] + "'S TABLE"

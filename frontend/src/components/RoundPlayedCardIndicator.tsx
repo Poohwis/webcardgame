@@ -4,7 +4,7 @@ import { useTableStateStore } from "../store/tableStateStore";
 import { useGameStateStore } from "../store/gameStateStore";
 import { PCOLOR } from "../constant";
 import { useEffect, useState } from "react";
-import { useWindowSizeStore } from "../store/windowSizeState";
+import { useWindowSizeStore } from "../store/windowSizeStateStore";
 import {CARDSNAME} from "../constant"
 
 interface RoundPlayedCardIndicatorProps {
@@ -16,7 +16,7 @@ export default function RoundPlayedCardIndicator({
   const {isSmallWindow, cardContainerPosition} =useWindowSizeStore()
   if (isSmallWindow)
     return (
-      <div style={{top : cardContainerPosition - 104}} className="fixed right-0 ">
+      <div  style={{top : cardContainerPosition - 104}} className="fixed right-0 ">
         <RoundPlayedCardContext users={users} isSmallWindow />
       </div>
     );

@@ -1,11 +1,11 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { cn } from "../utils/cn";
-import { useWindowSizeStore } from "../store/windowSizeState";
+import { useWindowSizeStore } from "../store/windowSizeStateStore";
 
 interface InviteButtonProps {
   roomUrl?: string;
-  position : number
+  position: number;
 }
 export default function InviteButton({ roomUrl, position }: InviteButtonProps) {
   //TODO use environment link
@@ -39,10 +39,10 @@ export default function InviteButton({ roomUrl, position }: InviteButtonProps) {
     <motion.button
       onClick={handleCopyUrl}
       whileTap={{ y: 2 }}
-      style={isSmallWindow ? {top : position + 30}: { top: "62%" }}
+      style={isSmallWindow ? { top: position + 20 } : { top: position + 20 }}
       exit={{ scale: 0 }}
       transition={{ scale: { delay: 0.8 } }}
-      animate={{width: isCopied ? 125 : 150 }}
+      animate={{ width: isCopied ? 125 : 150 }}
       className={cn(
         "z-10 absolute px-2 font-silk items-center justify-center text-center text-nowrap hover:cursor-pointer transition-colors flex flex-row  w-auto",
         isCopied

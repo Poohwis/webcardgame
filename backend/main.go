@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"runtime/debug"
 	"sync"
 	"time"
 	"unicode/utf8"
@@ -245,6 +246,18 @@ func generatePlayerName(existingNames map[string]bool) string {
 }
 
 func (s *Server) manageRoom(room *Room) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Panic recovered in room %s: %v%s", room.ID, r, debug.Stack())
+			sendToAll(room, "error", map[string]interface{}{
+				"type": "errClosedRoom",
+			})
+			room.Mutex.Lock()
+			delete(s.Rooms, room.ID)
+			room.Mutex.Unlock()
+		}
+	}()
+
 	for {
 		select {
 		case message := <-room.IncomingMessage:
@@ -450,6 +463,12 @@ func handleGameIncomingMessage(room *Room, message Message) {
 }
 
 func (s *Server) handleIncomingMessage(room *Room, message Message) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Recovered from panic in handleIncomingMessage (room %s): %v%s", room.ID, r, debug.Stack())
+		}
+	}()
+
 	switch message.Type {
 	case "chat":
 		//handle chat logic

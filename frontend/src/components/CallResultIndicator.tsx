@@ -3,7 +3,7 @@ import { PCOLOR } from "../constant";
 import { useGameStateStore } from "../store/gameStateStore";
 import { useTableStateStore } from "../store/tableStateStore";
 import { User } from "../type";
-import { useWindowSizeStore } from "../store/windowSizeState";
+import { useWindowSizeStore } from "../store/windowSizeStateStore";
 
 interface CallResultIndicatorProps {
   users: User[];

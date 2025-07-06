@@ -6,9 +6,12 @@ import {
 } from "../store/cardAnimationStore";
 import Card, { CARD_WIDTH } from "./Card";
 import { cn } from "../utils/cn";
-import { InGameAnnounceMessages, useInGameAnnounceStore } from "../store/inGameAnnounceStore";
+import {
+  InGameAnnounceMessages,
+  useInGameAnnounceStore,
+} from "../store/inGameAnnounceStore";
 import { useTableStateStore } from "../store/tableStateStore";
-import { useWindowSizeStore } from "../store/windowSizeState";
+import { useWindowSizeStore } from "../store/windowSizeStateStore";
 
 interface CardContainerProps {
   cards: number[];
@@ -44,6 +47,7 @@ export default function CardContainer({
       })
     );
   }, [cards]);
+          {/* animation state show TODO : DELETE */}
 
   useEffect(() => {
     const handleResize = () => {
@@ -300,8 +304,6 @@ export default function CardContainer({
     if (currentMode === CardAnimationMode.Ready && isCardSelectable) {
       cardSelectY();
     }
-
-    //TODO : check if i need to destroy animation when unmounting? /not sure how it work
   }, [cards, windowWidth, selectCardIndices, currentMode]);
 
   //flip
@@ -314,7 +316,7 @@ export default function CardContainer({
     if (announceState) {
       const timeout = setTimeout(() => {
         resetAnnounce();
-      }, 2000); 
+      }, 2000);
 
       return () => clearTimeout(timeout);
     }
@@ -341,7 +343,7 @@ export default function CardContainer({
         style={{ pointerEvents: isPlayable ? "auto" : "none" }}
         className={cn(
           "overflow-hidden relative items-center flex flex-row",
-           "sm:h-[300px] h-[250px] max-w-[640px] w-full sm:rounded-full rounded-3xl"
+          "sm:h-[300px] h-[250px] max-w-[640px] w-full sm:rounded-full rounded-3xl"
         )}
       >
         <motion.div
@@ -355,8 +357,8 @@ export default function CardContainer({
                 }
               : { width: 0, height: 0 }
           }
-          className="absolute left-[50%] -translate-x-[50%] 
-       bg-darkgreen  sm:rounded-full rounded-3xl border-lightgreen "
+          className="absolute left-[50%] -translate-x-[50%]
+       bg-darkgreen sm:rounded-full rounded-3xl border-lightgreen"
         />
         <AnimatePresence mode="wait">
           {announceState && (
@@ -365,7 +367,7 @@ export default function CardContainer({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               className="absolute  bottom-8
-       font-pixelify text-sm px-1 text-white/80 rounded-full text-nowrap"
+       font-pixelify text-sm px-2 text-white/80 rounded-full text-nowrap bg-rose-500 z-10"
             >
               {InGameAnnounceMessages[announceState]}
             </motion.div>

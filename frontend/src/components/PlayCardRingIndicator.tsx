@@ -1,7 +1,6 @@
 import { motion } from "motion/react";
 import { useTableStateStore } from "../store/tableStateStore";
 import { cn } from "../utils/cn";
-import { useWindowSizeStore } from "../store/windowSizeState";
 interface RoundPlayCardIndicator {
   radius: number;
   size: number;
@@ -21,8 +20,9 @@ export default function PlayCardRingIndicator({
   reversed = false,
   isShow,
 }: RoundPlayCardIndicator) {
-  const { isSmallWindow } = useWindowSizeStore();
-  const ringSize = isShow ? size * (isSmallWindow ? 1.36 : 1.25) : size;
+  // const ringSize = isShow ? size * (isSmallWindow ? 1.36 : 1.25) : size;
+  const ringSize = isShow ? size + 100 : size
+
   const centerX = ringSize / 2;
   const chordLength = 280;
   const startX = centerX - chordLength / 2;
@@ -41,7 +41,6 @@ export default function PlayCardRingIndicator({
     : `M${startX},${radius} C${cp1X},${cpY} ${cp2X},${cpY} ${endX},${radius}`;
 
   const { tableState } = useTableStateStore();
-
   return (
     <motion.svg
       className={cn(
@@ -72,7 +71,10 @@ export default function PlayCardRingIndicator({
       <defs>
         <path id={text} d={d} fill="transparent" />
       </defs>
-      <text fontSize={isSmallWindow ? 20 : 24} fill={textColor}>
+      <text
+      //  fontSize={isSmallWindow ? 20 : 24}
+       fontSize={size * 0.07}
+        fill={textColor}>
         <textPath href={`#${text}`} startOffset="50%" textAnchor="middle">
           {text}
         </textPath>

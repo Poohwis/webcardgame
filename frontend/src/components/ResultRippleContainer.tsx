@@ -30,17 +30,6 @@ export default function ResultRippleContainer({
     setAnimateRipple(false);
   };
 
-  //for test animation TODO: DELETE
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === "t") {
-        setAnimateRipple((prev) => !prev);
-      }
-    };
-    window.addEventListener("keypress", handleKeyPress);
-
-    return () => window.removeEventListener("keypress", handleKeyPress);
-  }, []);
 
   if (turn == -1) return;
   const expandScale = 1.6;

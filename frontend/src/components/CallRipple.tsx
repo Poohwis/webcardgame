@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { useWindowSizeStore } from "../store/windowSizeState";
+import { useWindowSizeStore } from "../store/windowSizeStateStore";
 import { useTableStateStore } from "../store/tableStateStore";
 import { useGameStateStore } from "../store/gameStateStore";
 import chroma from "chroma-js";
@@ -29,9 +29,6 @@ export default function CallRipple() {
   if (turn === -1) return;
   return (
     <>
-      <button className="top-4 absolute" onClick={() => setAnimateRipple(true)}>
-        ripple{animateRipple.toString()}
-      </button>
       <div className="flex items-center justify-center absolute top-1/2 left-1/2">
         <>
           <Ripple

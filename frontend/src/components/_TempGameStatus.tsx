@@ -87,7 +87,6 @@ export default function TempGameStatus({
             Start
           </button>
 
-          {/* animation state show TODO : DELETE */}
 
           <div>
             users:

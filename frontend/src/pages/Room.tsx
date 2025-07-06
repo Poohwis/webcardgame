@@ -27,7 +27,7 @@ import TempAnimationDisplay from "../components/_TempAnimationDisplay";
 import { useTableAnimationStore } from "../store/tableAnimationStore";
 import { useCardAnimationStore } from "../store/cardAnimationStore";
 import TempGameStatus from "../components/_TempGameStatus";
-import { useWindowSizeStore } from "../store/windowSizeState";
+import { useWindowSizeStore } from "../store/windowSizeStateStore";
 import UserList from "../components/UserList";
 import UserNameEditButton from "../components/UserNameEditButton";
 import { useGeneralAnnounceStore } from "../store/generalAnnounceStore";
@@ -87,11 +87,13 @@ export default function RoomPage() {
   const { clearTableQueue } = useTableAnimationStore();
   const { clearQueue } = useCardAnimationStore();
   const { setAnnounce } = useInGameAnnounceStore();
-  const { setIsSmallWindow } = useWindowSizeStore();
+  const { setIsSmallWindow, setWindowHeight, setWindowWidth } =
+    useWindowSizeStore();
   const generalAnnounceStore = useGeneralAnnounceStore();
 
   useEffect(() => {
     const handleResize = () => {
+      setWindowHeight(window.innerHeight);
       if (window.innerWidth < 640) {
         setIsSmallWindow(window.innerWidth < 640);
       } else {
@@ -165,14 +167,14 @@ export default function RoomPage() {
     sendToServer(state.ws, "nameChange", payload);
   };
 
-  if (state.error) {
-    navigate("/notfound");
-    return null;
-  }
-  if (state.errorMessage !== "") {
-    navigate("/notfound", { state: { type: state.errorMessage } });
-    return null;
-  }
+  // if (state.error) {
+  //   navigate("/notfound");
+  //   return null;
+  // }
+  // if (state.errorMessage !== "") {
+  //   navigate("/notfound", { state: { type: state.errorMessage } });
+  //   return null;
+  // }
 
   const handleSelectCard = (index: number) => {
     setSelectedCardIndices((prev) => {
@@ -301,7 +303,7 @@ export default function RoomPage() {
     >
       <GameEndModal ws={state.ws} users={state.users} />
       <StartGameMenu ws={state.ws} users={state.users} roomUrl={wsId} />
-      <div className="relative max-w-screen-xl w-full h-full flex flex-col">
+      <div className="relative max-w-screen-2xl w-full h-full flex flex-col">
         {/* MAIN AREA*/}
         <div className="flex flex-1 flex-col relative w-full h-full">
           <GameNumberIndicator />
@@ -317,6 +319,7 @@ export default function RoomPage() {
           </div>
           {/* PLAYER HAND */}
           <div className="self-end items-center justify-center flex w-full">
+            {/* <div className="self-end items-center justify-center flex w-full"> */}
             <div className="flex flex-col items-center justify-center -space-y-6 w-full px-4 sm:mb-0 mb-6">
               <CardContainer
                 cards={gameStateStore.cards}
@@ -336,16 +339,18 @@ export default function RoomPage() {
           </div>
         </div>
         {/* BOTTOM PANEL */}
-        <div className="w-full flex flex-col items-center justify-center px-4 sm:my-12 mb-4 space-y-4">
+        <div className=" w-full flex flex-col items-center justify-center px-4 sm:mb-12 sm:mt-4 mb-4 space-y-4">
           <div className="sm:translate-y-0">
             <UserList users={state.users} />
           </div>
-          <ChatBox
-            chats={state.chats}
-            chatInput={state.chatInput}
-            handleMessageSend={handleChatMessageSend}
-            dispatch={dispatch}
-          />
+          <div className="absolute left-0 bottom-6">
+            <ChatBox
+              chats={state.chats}
+              chatInput={state.chatInput}
+              handleMessageSend={handleChatMessageSend}
+              dispatch={dispatch}
+            />
+          </div>
         </div>
         <div className="absolute sm:bottom-12 sm:right-10 top-4 right-2 sm:top-auto">
           <UserNameEditButton
@@ -370,7 +375,6 @@ export default function RoomPage() {
         wsId={wsId}
       />
       <TempAnimationDisplay />
-      
     </div>
   );
 }
