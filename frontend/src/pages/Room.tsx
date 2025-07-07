@@ -87,7 +87,7 @@ export default function RoomPage() {
   const { clearTableQueue } = useTableAnimationStore();
   const { clearQueue } = useCardAnimationStore();
   const { setAnnounce } = useInGameAnnounceStore();
-  const { setIsSmallWindow, setWindowHeight, setWindowWidth } =
+  const { setIsSmallWindow, setWindowHeight } =
     useWindowSizeStore();
   const generalAnnounceStore = useGeneralAnnounceStore();
 
@@ -167,14 +167,14 @@ export default function RoomPage() {
     sendToServer(state.ws, "nameChange", payload);
   };
 
-  // if (state.error) {
-  //   navigate("/notfound");
-  //   return null;
-  // }
-  // if (state.errorMessage !== "") {
-  //   navigate("/notfound", { state: { type: state.errorMessage } });
-  //   return null;
-  // }
+  if (state.error) {
+    navigate("/notfound");
+    return null;
+  }
+  if (state.errorMessage !== "") {
+    navigate("/notfound", { state: { type: state.errorMessage } });
+    return null;
+  }
 
   const handleSelectCard = (index: number) => {
     setSelectedCardIndices((prev) => {

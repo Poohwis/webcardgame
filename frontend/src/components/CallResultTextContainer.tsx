@@ -3,7 +3,6 @@ import WaveTextWrapper from "./WaveTextWrapper";
 import { PCOLOR } from "../constant";
 import { useGameStateStore } from "../store/gameStateStore";
 import { useTableStateStore } from "../store/tableStateStore";
-import { motion } from "motion/react";
 
 export default function CallResultTextContainer() {
   const [isCallSuccess, setIsCallSuccess] = useState(false);

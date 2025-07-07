@@ -1,10 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Action, Chat } from "../type";
 import ChatItem from "./ChatItem";
 import { cn } from "../utils/cn";
 import { motion } from "motion/react";
-import { useWindowSizeStore } from "../store/windowSizeStateStore";
-import { useKeyboardStore } from "../store/keyboardStore";
 
 interface ChatBoxProps {
   chats: Chat[];
