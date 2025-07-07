@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { SERVER_LINK } from "../link";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "../utils/cn";
 import { useEffect, useState } from "react";
@@ -10,7 +9,7 @@ export default function HomePage() {
   const [errMessage, setErrMessage] = useState("");
   const handleCreateRoom = async () => {
     try {
-      const response = await fetch(`${SERVER_LINK}/create`);
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/create`);
       const roomURL = await response.text();
 
       const roomId = roomURL.split("/").pop();
@@ -28,7 +27,7 @@ export default function HomePage() {
       return;
     }
     try {
-      const res = await fetch(`${SERVER_LINK}/validate/${inputedRoomCode}`);
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/validate/${inputedRoomCode}`);
       if (res.ok) {
         navigate(`/ws/${inputedRoomCode}`);
       } else {

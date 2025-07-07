@@ -127,7 +127,7 @@ export default function RoomPage() {
     resetTableState();
 
     //  const ws = new WebSocket(`ws://localhost:8080/ws/${wsId}`);
-    const ws = new WebSocket(`${import.meta.env.VITE_BACKEND_URL}${wsId}`);
+    const ws = new WebSocket(`${import.meta.env.VITE_BACKEND_WS}${wsId}`);
 
     const handleMessage = (e: MessageEvent) => {
       handleWebSocketMessage(
