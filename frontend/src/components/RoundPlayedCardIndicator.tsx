@@ -34,7 +34,7 @@ const RoundPlayedCardContext = ({
   users: User[];
   isSmallWindow?: boolean;
 }) => {
-  const { lastPlayedBy, turn, lastPlayedCardCount, roundPlayCard } =
+  const { lastPlayedBy, lastPlayedCardCount, roundPlayCard } =
     useGameStateStore();
   const { tableState } = useTableStateStore();
   const [lastPlayerInfo, setLastPlayerInfo] = useState<{

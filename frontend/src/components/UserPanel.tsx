@@ -1,19 +1,17 @@
 import UserList from "./UserList";
 import UserNameEditButton from "./UserNameEditButton";
-import { Action, User } from "../type";
+import { User } from "../type";
 
 interface UserPanel {
   users: User[];
   displayName: string;
   order : number
-  dispatch: React.Dispatch<Action>;
   handleSendNameChange: () => void;
 }
 export default function UserPanel({
   users,
   displayName,
   order,
-  dispatch,
   handleSendNameChange,
 }: UserPanel) {
   return (
@@ -21,7 +19,6 @@ export default function UserPanel({
       <UserNameEditButton
         order={order}
         displayName={displayName}
-        dispatch={dispatch}
         handleSendNameChange={handleSendNameChange}
       />
       <UserList users={users} />
