@@ -126,7 +126,8 @@ export default function RoomPage() {
     gameStateStore.resetGameState();
     resetTableState();
 
-    const ws = new WebSocket(`ws://localhost:8080/ws/${wsId}`);
+    //  const ws = new WebSocket(`ws://localhost:8080/ws/${wsId}`);
+    const ws = new WebSocket(`${import.meta.env.VITE_BACKEND_URL}${wsId}`);
 
     const handleMessage = (e: MessageEvent) => {
       handleWebSocketMessage(

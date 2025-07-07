@@ -8,6 +8,7 @@ import { cn } from "../utils/cn";
 import { useTableStateStore } from "../store/tableStateStore";
 import { GoLink } from "react-icons/go";
 import InviteButton from "./InviteButton";
+import { CLIENT_LINK } from "../link";
 interface StartGameMenuProps {
   users: User[];
   ws: WebSocket | null;
@@ -19,7 +20,7 @@ export default function StartGameMenu({
   roomUrl,
 }: StartGameMenuProps) {
   const { currentState } = useGameStateStore();
-  const inviteUrl = `http://localhost:5173/ws/${roomUrl}`;
+  const inviteUrl = `${CLIENT_LINK}/ws/${roomUrl}`;
   const [isUrlCopied, setIsUrlCopied] = useState(false);
   const [isCodeCopied, setIsCodeCopied] = useState(false);
   const [copiedMessage, setCopiedMessage] = useState("");

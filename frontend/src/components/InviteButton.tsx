@@ -2,14 +2,14 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { cn } from "../utils/cn";
 import { useWindowSizeStore } from "../store/windowSizeStateStore";
+import { CLIENT_LINK } from "../link";
 
 interface InviteButtonProps {
   roomUrl?: string;
   position: number;
 }
 export default function InviteButton({ roomUrl, position }: InviteButtonProps) {
-  //TODO use environment link
-  const inviteUrl = `http://localhost:5173/ws/${roomUrl}`;
+  const inviteUrl = `${CLIENT_LINK}/ws/${roomUrl}`;
   const [isCopied, setIsCopied] = useState(false);
   const { isSmallWindow } = useWindowSizeStore();
 
