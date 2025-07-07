@@ -70,10 +70,10 @@ func main() {
 	fmt.Println("Server started on :8080")
 
 	//Deployment (Docker/Koyeb)
-	// err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":8080", nil)
 
 	//Local dev only
-	err := http.ListenAndServe("127.0.0.1:8080", nil)
+	// err := http.ListenAndServe("127.0.0.1:8080", nil)
 	if err != nil {
 		log.Fatalf("Error starting server: %s", err)
 	}
