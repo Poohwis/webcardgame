@@ -9,7 +9,7 @@ export default function HomePage() {
   const [errMessage, setErrMessage] = useState("");
   const handleCreateRoom = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/create`);
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}create`);
       const roomURL = await response.text();
 
       const roomId = roomURL.split("/").pop();
@@ -27,7 +27,7 @@ export default function HomePage() {
       return;
     }
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/validate/${inputedRoomCode}`);
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}validate/${inputedRoomCode}`);
       if (res.ok) {
         navigate(`/ws/${inputedRoomCode}`);
       } else {

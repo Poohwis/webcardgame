@@ -57,7 +57,13 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// make it handle when player leave the game in mid play (remove player and continue)
+func enableCORS(w http.ResponseWriter) {
+	w.Header().Set("Access-Control-Allow-Origin", "*") // TODO : Change it to real frontend url
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+}
+
+// TODO: make it handle when player leave the game in mid play (remove player and continue)
 func main() {
 	server := &Server{
 		Rooms: make(map[string]*Room),
@@ -79,9 +85,7 @@ func main() {
 	}
 }
 func (s *Server) handleValidateRoom(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*") // Change "*" to a specific domain for more security
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	enableCORS(w)
 
 	roomId := r.URL.Path[len("/validate/"):]
 
@@ -94,9 +98,7 @@ func (s *Server) handleValidateRoom(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCreateRoom(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*") // Change "*" to a specific domain for more security
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	enableCORS(w)
 
 	// Handle preflight request (for non-GET/POST methods)
 	if r.Method == http.MethodOptions {
@@ -126,6 +128,7 @@ func (s *Server) handleCreateRoom(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
+	enableCORS(w)
 	roomID := r.URL.Path[len("/ws/"):]
 	room, exists := s.Rooms[roomID]
 	if !exists {
