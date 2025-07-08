@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useGameStateStore } from "../store/gameStateStore";
 import { useTableStateStore } from "../store/tableStateStore";
 import { sendStartMessageToServer } from "../utils/sendToServerGameMessage";
+import { CLIENT_LINK } from "../link";
 
 interface TempGameStatusProps {
   state: any;
@@ -69,11 +70,16 @@ export default function TempGameStatus({
         <div>isSending: {isSending.toString()}</div>
         <div>error: {state.errorMessage}</div>
         <div className="flex flex-col">
-          <a href="http://localhost:5173" className="border border-black px-2">
+          <a 
+          //TODO : Delete
+          // href={"http://localhost:5173"}
+          href={CLIENT_LINK} className="border border-black px-2">
             home
           </a>
           <a
-            href={`http://localhost:5173/ws/${wsId}`}
+          //TODO : Delete
+            // href={`http://localhost:5173/ws/${wsId}`}
+            href={`${CLIENT_LINK}/ws/${wsId}`}
             rel="noopener noreferrer"
             target="_blank"
             className="border border-black px-1"
