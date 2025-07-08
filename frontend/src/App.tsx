@@ -8,7 +8,7 @@ export default function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/ws/:wsId" element={<Room />} />
+        <Route path="/room/:wsId" element={<Room />} />
         <Route path="/notfound" element={<NotFound />} />
         <Route path="*" element={<NotFound />}></Route>
       </Routes>

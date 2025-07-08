@@ -9,7 +9,7 @@ interface InviteButtonProps {
   position: number;
 }
 export default function InviteButton({ roomUrl, position }: InviteButtonProps) {
-  const inviteUrl = `${CLIENT_LINK}/ws/${roomUrl}`;
+  const inviteUrl = `${CLIENT_LINK}/room/${roomUrl}`;
   const [isCopied, setIsCopied] = useState(false);
   const { isSmallWindow } = useWindowSizeStore();
 

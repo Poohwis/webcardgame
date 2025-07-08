@@ -20,7 +20,7 @@ export default function StartGameMenu({
   roomUrl,
 }: StartGameMenuProps) {
   const { currentState } = useGameStateStore();
-  const inviteUrl = `${CLIENT_LINK}/ws/${roomUrl}`;
+  const inviteUrl = `${CLIENT_LINK}/room/${roomUrl}`;
   const [isUrlCopied, setIsUrlCopied] = useState(false);
   const [isCodeCopied, setIsCodeCopied] = useState(false);
   const [copiedMessage, setCopiedMessage] = useState("");
