@@ -71,15 +71,11 @@ export default function TempGameStatus({
         <div>error: {state.errorMessage}</div>
         <div className="flex flex-col">
           <a 
-          //TODO : Delete
-          // href={"http://localhost:5173"}
           href={CLIENT_LINK} className="border border-black px-2">
             home
           </a>
           <a
-          //TODO : Delete
-            // href={`http://localhost:5173/ws/${wsId}`}
-            href={`${CLIENT_LINK}/room/${wsId}`}
+            href={`${CLIENT_LINK}room/${wsId}`}
             rel="noopener noreferrer"
             target="_blank"
             className="border border-black px-1"

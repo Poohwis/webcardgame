@@ -49,7 +49,6 @@ export default function WaveTextWrapper({
           onAnimationComplete={async() => {
             if (i === letters.length - 1) {
               await wait(1500)
-            console.log("end")
               setIsWaving(false);
               onWaveEnd();
             }

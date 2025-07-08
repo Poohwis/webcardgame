@@ -15,7 +15,6 @@ export default function HomePage() {
       const roomId = roomURL.split("/").pop();
       navigate(`/room/${roomId}`);
     } catch (err) {
-      //TODO:show the error
       console.error("Error creating room:", err);
     }
   };

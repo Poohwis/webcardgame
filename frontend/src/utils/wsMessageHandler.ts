@@ -15,7 +15,6 @@ export function handleWebSocketMessage(
   handleResetGame: () => void
 ) {
   const message: MessageEventPayload = JSON.parse(e.data);
-  console.log(message);
   const { type, payload } = message;
 
   switch (type) {

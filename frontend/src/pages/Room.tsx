@@ -23,10 +23,8 @@ import {
 import { useTableStateStore } from "../store/tableStateStore";
 import StartGameMenu from "../components/StartGameMenu";
 import GameEndModal from "../components/GameEndModal";
-import TempAnimationDisplay from "../components/_TempAnimationDisplay";
 import { useTableAnimationStore } from "../store/tableAnimationStore";
 import { useCardAnimationStore } from "../store/cardAnimationStore";
-import TempGameStatus from "../components/_TempGameStatus";
 import { useWindowSizeStore } from "../store/windowSizeStateStore";
 import UserList from "../components/UserList";
 import UserNameEditButton from "../components/UserNameEditButton";
@@ -87,8 +85,7 @@ export default function RoomPage() {
   const { clearTableQueue } = useTableAnimationStore();
   const { clearQueue } = useCardAnimationStore();
   const { setAnnounce } = useInGameAnnounceStore();
-  const { setIsSmallWindow, setWindowHeight } =
-    useWindowSizeStore();
+  const { setIsSmallWindow, setWindowHeight } = useWindowSizeStore();
   const generalAnnounceStore = useGeneralAnnounceStore();
 
   useEffect(() => {
@@ -160,7 +157,6 @@ export default function RoomPage() {
   const handleSendNameChange = (newName: string) => {
     // if (state.displayName.length < 1 || state.displayName.length > 16) {
     if (newName.length < 1 || newName.length > 16) {
-      console.log("struck");
       return;
     }
     // const payload = { newName: state.displayName.trim() };
@@ -193,17 +189,9 @@ export default function RoomPage() {
 
   const handlePlayCardAction = async () => {
     if (isSending) return;
-    if (gameStateStore.turn !== state.order) {
-      console.log("Invalid player turn");
-      return;
-    }
-    if (
-      selectCardIndices.length < 1 &&
-      gameStateStore.forcePlayerOrder !== state.order
-    ) {
-      console.log("Not select the card");
-      return;
-    }
+    if (gameStateStore.turn !== state.order) return;
+    if ( selectCardIndices.length < 1 && gameStateStore.forcePlayerOrder !== state.order) return;
+
     setIsSending(true);
 
     //Update client card
@@ -231,14 +219,8 @@ export default function RoomPage() {
 
   const handleCallAction = () => {
     if (isSending) return;
-    if (gameStateStore.turn !== state.order) {
-      console.log("Invalid player turn");
-      return;
-    }
-    if (gameStateStore.lastPlayedBy.length == 0) {
-      console.log("Invalid call");
-      return;
-    }
+    if (gameStateStore.turn !== state.order) return;
+    if (gameStateStore.lastPlayedBy.length == 0) return;
     setIsSending(true);
     setSelectedCardIndices([]);
 
@@ -361,21 +343,6 @@ export default function RoomPage() {
           />
         </div>
       </div>
-
-      {/* state report */}
-      {/* <div className="flex flex-col absolute top-0 left-0 text-sm">
-        {state.eventslog.map((item, index) => (
-          <div key={index}>{item}</div>
-        ))}
-      </div> */}
-      {/* for test game logic panel */}
-      <TempGameStatus
-        state={state}
-        isSending={isSending}
-        selectCardIndices={selectCardIndices}
-        wsId={wsId}
-      />
-      <TempAnimationDisplay />
     </div>
   );
 }

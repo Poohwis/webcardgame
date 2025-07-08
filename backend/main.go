@@ -138,7 +138,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("WebSocket upgrade error:", err)
+		log.Printf("[Room: %s] WebSocket upgrade error: %s", roomID, err)
 		http.Error(w, "WebSocket upgrade failed", http.StatusInternalServerError)
 		return
 	}
@@ -165,9 +165,8 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			},
 		})
 		conn.Close()
-		log.Println("Room is not available right now")
+		log.Printf("[Room: %s] Room is not available", roomID)
 		room.Mutex.Unlock()
-		//TODO: write to client: reject connection and test more about error that can occur in the room
 		return
 	}
 
@@ -179,9 +178,8 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			},
 		})
 		conn.Close()
-		log.Println("Room is full, rejecting connection.")
+		log.Printf("[Room: %s] Room is full, rejecting connection.", roomID)
 		room.Mutex.Unlock()
-		//TODO: write to client: reject connection and test more about error that can occur in the room
 		return
 	}
 
@@ -203,7 +201,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	room.Mutex.Unlock()
 
-	log.Printf("%s joined room %s as Player%d", displayname, roomID, slotNum+1)
+	log.Printf("[Room: %s] %s joined on Slot: %d", roomID, displayname, slotNum+1)
 	_ = conn.WriteJSON(OutgoingMessage{
 		Type: "initializeSlot",
 		Payload: map[string]interface{}{
@@ -281,7 +279,7 @@ func (s *Server) manageRoom(room *Room) {
 		if len(room.Clients) == 0 {
 			delete(s.Rooms, room.ID)
 			room.Mutex.Unlock()
-			log.Printf("Room %s deleted as it has no clients", room.ID)
+			log.Printf("[Room %s] deleted as it has no clients", room.ID)
 			return
 		}
 		room.Mutex.Unlock()
@@ -299,14 +297,16 @@ func (s *Server) readMessage(conn *websocket.Conn, room *Room) {
 		_, message, err := conn.ReadMessage()
 		log.Printf("%s", message)
 		if err != nil {
-			log.Printf("Read error for room %s: %v:", room.ID, err)
+			// log.Printf("Read error for room %s: %v:", room.ID, err)
+			logRoom(room, "Read error: %s", err)
 			break
 		}
 
 		var parsedMessage Message
 		err = json.Unmarshal(message, &parsedMessage)
 		if err != nil {
-			log.Println("JSON parse error:", err)
+			// log.Println("JSON parse error:", err)
+			logRoom(room, "JSON parse error: %s", err)
 			continue
 		}
 
@@ -321,7 +321,8 @@ func (s *Server) readMessage(conn *websocket.Conn, room *Room) {
 		room.Mutex.Unlock()
 
 		if slotNum == -1 {
-			log.Println("Unknow sender, ignoring message")
+			// log.Println("Unknow sender, ignoring message")
+			logRoom(room, "Unknow sender: ignoring message")
 			continue
 		}
 
@@ -334,12 +335,14 @@ func (s *Server) readMessage(conn *websocket.Conn, room *Room) {
 func handleGameIncomingMessage(room *Room, message Message) {
 	action, ok := message.Payload["action"].(string)
 	if !ok {
-		log.Printf("Unknown action: %v", action)
+		// log.Printf("Unknown action: %v", action)
+		logRoom(room, "Unknow action: %s", action)
 		return
 	}
 	switch action {
 	case "start":
-		log.Print("Game start")
+		// log.Print("Game start")
+		logRoom(room, "Game start")
 
 		//TODO : finish the To win score logic
 
@@ -348,7 +351,8 @@ func handleGameIncomingMessage(room *Room, message Message) {
 		room.Mutex.Unlock()
 
 		endGameScore := int(message.Payload["endGameScore"].(float64))
-		log.Println("Endgame score at:", endGameScore)
+		// log.Println("Endgame score at:", endGameScore)
+		logRoom(room, "Endgame score setting at: %v", endGameScore)
 
 		room.ClientGameState, room.ServerGameState = game.NewGameState(room.Slots, endGameScore)
 
@@ -411,13 +415,15 @@ func handleGameIncomingMessage(room *Room, message Message) {
 
 	case "playCard":
 		if message.SenderSlot != room.ClientGameState.Turn {
-			log.Print("Invalid player turn")
+			// log.Print("Invalid player turn")
+			logRoom(room, "Invalid player turn")
 			return
 		}
 
 		playedCards, ok := message.Payload["playedCards"].([]interface{})
 		if !ok {
-			log.Println("Invalid playedCards type")
+			// log.Println("Invalid playedCards type")
+			logRoom(room, "Invalid playedCards type")
 			return
 		}
 
@@ -427,12 +433,14 @@ func handleGameIncomingMessage(room *Room, message Message) {
 			if cardFloat, ok := card.(float64); ok {
 				cards = append(cards, int(cardFloat))
 			} else {
-				log.Println("Invalid card value")
+				// log.Println("Invalid card value")
+				logRoom(room, "Invalid card value")
 				return
 			}
 		}
 
-		log.Printf("Order:%v playedCards: %v", message.SenderSlot, cards)
+		// log.Printf("Order:%v playedCards: %v", message.SenderSlot, cards)
+		logRoom(room, "PlayerOrder: %v played cards :%v", message.SenderSlot, cards)
 
 		// Process the played cards
 		room.ClientGameState.PlayCard(room.ServerGameState, message.SenderSlot, cards)
@@ -445,13 +453,15 @@ func handleGameIncomingMessage(room *Room, message Message) {
 	case "call":
 		lastPlayOrder := room.ClientGameState.LastPlayedBy
 
-		log.Printf("PlayerOrder:%v called : %v", message.SenderSlot, lastPlayOrder[len(lastPlayOrder)-1])
+		// log.Printf("PlayerOrder:%v called : %v", message.SenderSlot, lastPlayOrder[len(lastPlayOrder)-1])
+		logRoom(room, "PlayerOrder:%v called : %v", message.SenderSlot, lastPlayOrder[len(lastPlayOrder)-1])
 		isToNextGame, isCallSuccess := room.ClientGameState.CallCheck(room.ServerGameState, message.SenderSlot, lastPlayOrder[len(lastPlayOrder)-1])
 		action := "toNextRound"
 		if isToNextGame {
 			action = "toNextGame"
 		}
-		log.Printf("%v", action)
+		// log.Printf("%v", action)
+		logRoom(room, "Process to: %v", action)
 		sendToAll(room, "game", map[string]interface{}{
 			"action":        action,
 			"state":         room.ClientGameState,
@@ -479,30 +489,35 @@ func (s *Server) handleIncomingMessage(room *Room, message Message) {
 	switch message.Type {
 	case "chat":
 		//handle chat logic
-		log.Printf("chat channel: %v %d", message.Payload, message.SenderSlot)
+		// log.Printf("chat channel: %v %d", message.Payload, message.SenderSlot)
+		logRoom(room, "Chat message: %v %d", message.Payload, message.SenderSlot)
 		room.OutgoingMessage <- OutgoingMessage{
 			Type:    message.Type,
 			Payload: message.Payload,
 		}
 	case "game":
 		//handle game logic
-		log.Printf("game logic: %v", message.Payload)
+		// log.Printf("game logic: %v", message.Payload)
+		logRoom(room, "Game message: %v", message.Payload)
 		handleGameIncomingMessage(room, message)
 
 	case "nameChange":
-		log.Printf("changename: %v from %v", message.Payload, message.SenderSlot)
+		// log.Printf("changename: %v from %v", message.Payload, message.SenderSlot)
+		logRoom(room, "Change name: %s from %v", message.Payload, message.SenderSlot)
 		room.Mutex.Lock()
 		defer s.updateUserList(room)
 		defer room.Mutex.Unlock()
 
 		newName, ok := message.Payload["newName"].(string)
 		if !ok {
-			log.Println("Invalid name change payload")
+			// log.Println("Invalid name change payload")
+			logRoom(room, "Invalid name change payload")
 			return
 		}
 
 		if utf8.RuneCountInString(newName) < 1 || utf8.RuneCountInString(newName) > 16 {
-			log.Println("Name must contain between 1 and 16 characters", utf8.RuneCountInString(newName))
+			// log.Println("Name must contain between 1 and 16 characters", utf8.RuneCountInString(newName))
+			logRoom(room, "Name must contain between 1 and 16 characters: %v", utf8.RuneCountInString(newName))
 			return
 		}
 
@@ -514,7 +529,8 @@ func (s *Server) handleIncomingMessage(room *Room, message Message) {
 					sendToClient(senderConn, "nameChangeStatus", map[string]interface{}{
 						"isReject": true,
 						"name":     room.Users[room.Slots[message.SenderSlot-1]].DisplayName})
-					log.Println("Name already in use")
+					// log.Println("Name already in use")
+					logRoom(room, "Name already in use")
 				}
 				return
 			}
@@ -525,9 +541,9 @@ func (s *Server) handleIncomingMessage(room *Room, message Message) {
 				prevName := user.DisplayName
 				user.DisplayName = newName
 				room.Users[conn] = user // Update user map
-				log.Printf("Player %d changed name to %s", message.SenderSlot, newName)
+				// log.Printf("Player %d changed name to %s", message.SenderSlot, newName)
+				logRoom(room, "Player %d changed name to %s", message.SenderSlot, newName)
 				sendToClient(conn, "nameChangeStatus", map[string]interface{}{"isReject": false, "name": newName})
-				log.Println(user.DisplayName)
 
 				// Notify all clients about the name change
 				room.OutgoingMessage <- OutgoingMessage{
@@ -544,7 +560,8 @@ func (s *Server) handleIncomingMessage(room *Room, message Message) {
 		}
 
 	default:
-		log.Printf("Unknow message type received in room %s: %s", room.ID, message.Type)
+		// log.Printf("Unknow message type received in room %s: %s", room.ID, message.Type)
+		logRoom(room, "Unknow message type received in room %s: %s", room.ID, message.Type)
 	}
 
 }
@@ -589,7 +606,8 @@ func (s *Server) removePlayer(conn *websocket.Conn, room *Room) {
 	if room.ClientGameState != nil {
 		isOnlyOnePlayerLeft, isGoToNextGame, skipToTurn = room.ClientGameState.SetLeavePlayer(order, room.Slots)
 	}
-	log.Println(isGoToNextGame)
+	// log.Println(isGoToNextGame)
+	logRoom(room, "Is go to next game: %v", isGoToNextGame)
 
 	delete(room.Clients, conn)
 	delete(room.Users, conn)
@@ -600,16 +618,18 @@ func (s *Server) removePlayer(conn *websocket.Conn, room *Room) {
 
 	if isOnlyOnePlayerLeft {
 		//show all disconnect message
-		log.Println("isOnlyOnePlayerLeft:", isOnlyOnePlayerLeft)
+		// log.Println("isOnlyOnePlayerLeft:", isOnlyOnePlayerLeft)
+		logRoom(room, "isOnlyOnePlayerLeft: %v", isOnlyOnePlayerLeft)
 		sendToAll(room, "game", map[string]interface{}{"action": "gameResult", "state": room.ClientGameState, "gameResult": []int{-1}})
 	}
 
 	if skipToTurn != -1 {
-		log.Println("Turn skipped to:", skipToTurn)
+		// log.Println("Turn skipped to:", skipToTurn)
+		logRoom(room, "Turn skipped to: %v", skipToTurn)
 		sendToAll(room, "game", map[string]interface{}{"action": "playCard", "state": room.ClientGameState})
 	}
-	log.Printf("%s left the room", displayName)
-	log.Printf("Slots: %v", room.Slots)
+	// log.Printf("%s left the room", displayName)
+	logRoom(room, "%s(%v) left the room", displayName, room.Slots)
 
 	s.updateUserList(room)
 }
@@ -624,7 +644,8 @@ func sendToAll(room *Room, messageType string, payload map[string]interface{}) {
 			Payload: payload,
 		})
 		if err != nil {
-			log.Printf("Error sending message to client: %v", err)
+			// log.Printf("Error sending message to client: %v", err)
+			logRoom(room, "Error sending message to client: %v", err)
 			client.Close()
 			delete(room.Clients, client)
 			delete(room.Users, client)
@@ -654,9 +675,14 @@ func sendToAllExcept(room *Room, exceptClient *websocket.Conn, messageType strin
 				Payload: payload,
 			})
 			if err != nil {
-				log.Printf("Error sending message to client: %v", err)
+				// log.Printf("Error sending message to client: %v", err)
+				logRoom(room, "Error sending message to client: %v", err)
 				client.Close()
 			}
 		}
 	}
+}
+
+func logRoom(room *Room, format string, v ...interface{}) {
+	log.Printf("[Room: %s] - %s", room.ID, fmt.Sprintf(format, v...))
 }

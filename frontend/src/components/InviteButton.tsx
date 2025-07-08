@@ -9,7 +9,7 @@ interface InviteButtonProps {
   position: number;
 }
 export default function InviteButton({ roomUrl, position }: InviteButtonProps) {
-  const inviteUrl = `${CLIENT_LINK}/room/${roomUrl}`;
+  const inviteUrl = `${CLIENT_LINK}room/${roomUrl}`;
   const [isCopied, setIsCopied] = useState(false);
   const { isSmallWindow } = useWindowSizeStore();
 
@@ -22,7 +22,7 @@ export default function InviteButton({ roomUrl, position }: InviteButtonProps) {
       await navigator.clipboard.writeText(inviteUrl);
       setIsCopied(true);
     } catch (error) {
-      console.log("Failed to copy:", error);
+      console.error("Failed to copy:", error);
     }
   };
 
@@ -44,7 +44,7 @@ export default function InviteButton({ roomUrl, position }: InviteButtonProps) {
       transition={{ scale: { delay: 0.8 } }}
       animate={{ width: isCopied ? 125 : 150 }}
       className={cn(
-        "z-10 absolute px-2 font-silk items-center justify-center text-center text-nowrap hover:cursor-pointer transition-colors flex flex-row  w-auto",
+        "z-10 absolute px-2 hover:opacity-85 font-silk items-center justify-center text-center text-nowrap hover:cursor-pointer transition-colors flex flex-row  w-auto",
         isCopied
           ? "bg-lime-800 text-lime-200 rounded-full"
           : "bg-black text-white/80 rounded-sm"

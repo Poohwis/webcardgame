@@ -20,7 +20,7 @@ export default function StartGameMenu({
   roomUrl,
 }: StartGameMenuProps) {
   const { currentState } = useGameStateStore();
-  const inviteUrl = `${CLIENT_LINK}/room/${roomUrl}`;
+  const inviteUrl = `${CLIENT_LINK}room/${roomUrl}`;
   const [isUrlCopied, setIsUrlCopied] = useState(false);
   const [isCodeCopied, setIsCodeCopied] = useState(false);
   const [copiedMessage, setCopiedMessage] = useState("");
@@ -46,7 +46,7 @@ export default function StartGameMenu({
       await navigator.clipboard.writeText(inviteUrl);
       setIsUrlCopied(true);
     } catch (error) {
-      console.log("Failed to copy:", error);
+      console.error("Failed to copy:", error);
     }
   };
   const handleCopyCode = async () => {
@@ -59,7 +59,7 @@ export default function StartGameMenu({
       await navigator.clipboard.writeText(roomUrl!);
       setIsCodeCopied(true);
     } catch (error) {
-      console.log("Failed to copy:", error);
+      console.error("Failed to copy:", error);
     }
   };
 
