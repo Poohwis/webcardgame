@@ -79,7 +79,7 @@ export default function TempGameStatus({
           <a
           //TODO : Delete
             // href={`http://localhost:5173/ws/${wsId}`}
-            href={`${CLIENT_LINK}/ws/${wsId}`}
+            href={`${CLIENT_LINK}/room/${wsId}`}
             rel="noopener noreferrer"
             target="_blank"
             className="border border-black px-1"

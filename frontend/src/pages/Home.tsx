@@ -13,7 +13,7 @@ export default function HomePage() {
       const roomURL = await response.text();
 
       const roomId = roomURL.split("/").pop();
-      navigate(`/ws/${roomId}`);
+      navigate(`/room/${roomId}`);
     } catch (err) {
       //TODO:show the error
       console.error("Error creating room:", err);
@@ -29,7 +29,7 @@ export default function HomePage() {
     try {
       const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}validate/${inputedRoomCode}`);
       if (res.ok) {
-        navigate(`/ws/${inputedRoomCode}`);
+        navigate(`/room/${inputedRoomCode}`);
       } else {
         setErrMessage("Room not found");
         console.error("room not found");
