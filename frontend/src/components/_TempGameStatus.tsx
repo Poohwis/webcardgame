@@ -70,9 +70,13 @@ export default function TempGameStatus({
         <div>isSending: {isSending.toString()}</div>
         <div>error: {state.errorMessage}</div>
         <div className="flex flex-col">
-          <a 
+          {/* <a 
           href={CLIENT_LINK} className="border border-black px-2">
             home
+          </a> */}
+          <a 
+          href={"http://localhost:5173"} className="border border-black px-2">
+          local
           </a>
           <a
             href={`${CLIENT_LINK}room/${wsId}`}

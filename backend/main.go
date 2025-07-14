@@ -72,6 +72,7 @@ func main() {
 	http.HandleFunc("/create", server.handleCreateRoom)
 	http.HandleFunc("/ws/", server.handleWebSocket)
 	http.HandleFunc("/validate/", server.handleValidateRoom)
+	http.HandleFunc("/ping", server.handlePing)
 
 	fmt.Println("Server started on :8080")
 
@@ -84,6 +85,13 @@ func main() {
 		log.Fatalf("Error starting server: %s", err)
 	}
 }
+
+func (s *Server) handlePing(w http.ResponseWriter, r *http.Request) {
+	enableCORS(w) // If you already use CORS handling
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("pong"))
+}
+
 func (s *Server) handleValidateRoom(w http.ResponseWriter, r *http.Request) {
 	enableCORS(w)
 

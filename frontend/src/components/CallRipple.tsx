@@ -5,6 +5,7 @@ import { useTableStateStore } from "../store/tableStateStore";
 import { useGameStateStore } from "../store/gameStateStore";
 import chroma from "chroma-js";
 import { PCOLOR } from "../constant";
+import { PlayCallRippleSound } from "../utils/sound";
 
 export default function CallRipple() {
   const [animateRipple, setAnimateRipple] = useState(true);
@@ -14,6 +15,7 @@ export default function CallRipple() {
   useEffect(() => {
     if (tableState === "resultUpdate") {
       setAnimateRipple(true);
+      PlayCallRippleSound()
     } else {
       setAnimateRipple(false);
     }

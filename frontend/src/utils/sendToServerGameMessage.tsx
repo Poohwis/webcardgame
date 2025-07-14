@@ -1,4 +1,4 @@
-import { sendToServer } from "./sendTosServer";
+import { sendToServer } from "./sendToServer";
 
 export function sendStartMessageToServer(
   ws: WebSocket | null,

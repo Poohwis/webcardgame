@@ -132,7 +132,7 @@ export default function UserNameEditButton({
               setNameEditMode();
               setIsNameEdit(true);
             }}
-            className="flex  sm:w-[125px]  hover:opacity-90 sm:px-2 h-6 w-6 
+            className="sm:w-[125px] sm:flex hidden hover:opacity-90 sm:px-2 h-6 w-6 
              rounded-full bg-gray-800/50 flex-row font-nippo gap-x-1 text-white/80 text-sm items-center justify-center"
           >
             <div className="sm:flex hidden py-1">Change name</div>

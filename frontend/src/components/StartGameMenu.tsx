@@ -9,6 +9,7 @@ import { useTableStateStore } from "../store/tableStateStore";
 import { GoLink } from "react-icons/go";
 import InviteButton from "./InviteButton";
 import { CLIENT_LINK } from "../link";
+import HowtoplayModal from "./HowtoplayModal";
 interface StartGameMenuProps {
   users: User[];
   ws: WebSocket | null;
@@ -25,6 +26,7 @@ export default function StartGameMenu({
   const [isCodeCopied, setIsCodeCopied] = useState(false);
   const [copiedMessage, setCopiedMessage] = useState("");
   const [endGameScore, setEndGameScore] = useState(2);
+  const [showHowtoplayModal, setShowHowtoplayModal] = useState(false);
   const { setTableState } = useTableStateStore();
   useEffect(() => {
     // if (!isUrlCopied ) return;
@@ -105,7 +107,10 @@ export default function StartGameMenu({
                 {Array.from({ length: 23 }).map((_, index) => (
                   <motion.div
                     key={index}
-                    animate={{ width: 230 - index * 10, height: 230 - index * 10, }}
+                    animate={{
+                      width: 230 - index * 10,
+                      height: 230 - index * 10,
+                    }}
                     transition={{ delay: 0.04 * index }}
                     className={cn(
                       "absolute rounded-full",
@@ -218,21 +223,29 @@ export default function StartGameMenu({
                 </motion.div>
                 <motion.button
                   whileTap={{ y: 2 }}
-                  onClick={() => sendStartMessageToServer(ws, endGameScore)}
+                  onClick={() => {
+                    sendStartMessageToServer(ws, endGameScore);
+                  }}
                   disabled={users.length <= 1}
                   // exit={{ x: 250 }}
                   transition={{ delay: 0.2 }}
-                  className="bg-black px-2 mt-3 text-white/80 group hover:cursor-pointer relative w-[72px] h-6 flex flex-row overflow-hidden rounded-sm"
+                  className={`${
+                    users.length > 1 ? "bg-black" : "bg-gray-400"
+                  } px-2 mt-3 text-white/80 group hover:cursor-pointer relative w-[72px] h-6 flex flex-row overflow-hidden rounded-sm`}
                 >
                   <div className="z-20">start</div>
-                  <div className="bg-deepred h-6 w-[72px] absolute -right-[72px] z-10 group-hover:-translate-x-[72px] transition-transform" />
+                  <div
+                    className={`bg-deepred h-6 w-[72px] absolute -right-[72px] z-10 ${
+                      users.length > 1 ? "group-hover:-translate-x-[72px]" : ""
+                    } transition-transform`}
+                  />
                 </motion.button>
               </div>
 
               {/* how to play button */}
               <motion.button
                 whileTap={{ y: 2 }}
-                // exit={{ x: 250 }}
+                onClick={() => setShowHowtoplayModal(true)}
                 transition={{ delay: 0.3 }}
                 className="bg-black px-2 text-white/80 group hover:cursor-pointer relative w-[140px] h-6 flex flex-row overflow-hidden rounded-sm"
               >
@@ -248,6 +261,9 @@ export default function StartGameMenu({
           </>
         )}
       </AnimatePresence>
+      {showHowtoplayModal && (
+        <HowtoplayModal setShowHowtoplayModal={setShowHowtoplayModal} />
+      )}
     </>
   );
 }

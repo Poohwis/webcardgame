@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Action, Chat, User } from "../type";
 import ChatBox from "../components/ChatBox";
 import { handleWebSocketMessage } from "../utils/wsMessageHandler";
-import { sendToServer } from "../utils/sendTosServer";
+import { sendToServer } from "../utils/sendToServer";
 import {
   sendNextGameMessageToServer,
   sendNextRoundMessageToServer,
@@ -29,6 +29,7 @@ import { useWindowSizeStore } from "../store/windowSizeStateStore";
 import UserList from "../components/UserList";
 import UserNameEditButton from "../components/UserNameEditButton";
 import { useGeneralAnnounceStore } from "../store/generalAnnounceStore";
+import BgmSetting from "../components/BgmSetting";
 
 const initialState = {
   ws: null as WebSocket | null,
@@ -190,7 +191,11 @@ export default function RoomPage() {
   const handlePlayCardAction = async () => {
     if (isSending) return;
     if (gameStateStore.turn !== state.order) return;
-    if ( selectCardIndices.length < 1 && gameStateStore.forcePlayerOrder !== state.order) return;
+    if (
+      selectCardIndices.length < 1 &&
+      gameStateStore.forcePlayerOrder !== state.order
+    )
+      return;
 
     setIsSending(true);
 
@@ -343,6 +348,7 @@ export default function RoomPage() {
           />
         </div>
       </div>
+      <BgmSetting />
     </div>
   );
 }

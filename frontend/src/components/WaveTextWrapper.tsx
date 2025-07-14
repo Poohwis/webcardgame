@@ -1,5 +1,3 @@
-"use client";
-
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import wait from "../utils/wait";
@@ -15,6 +13,7 @@ export default function WaveTextWrapper({
   textTrigger,
   onWaveEnd,
 }: WaveTextWrapperProps) {
+  const letters = children.split("").concat(" ");
   const [isWaving, setIsWaving] = useState(false);
 
   useEffect(() => {
@@ -23,12 +22,11 @@ export default function WaveTextWrapper({
     }
   }, [textTrigger, isWaving]);
 
-  const letters = children.split("").concat(" ");
 
   return (
     <div className="inline-block">
       {letters.map((letter, i) => (
-        <motion.span
+        <motion.div
           key={i}
           className="inline-block"
           initial={{ opacity: 0 }}
@@ -55,7 +53,7 @@ export default function WaveTextWrapper({
           }}
         >
           {letter}
-        </motion.span>
+        </motion.div>
       ))}
     </div>
   );

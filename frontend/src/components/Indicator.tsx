@@ -79,8 +79,14 @@ export default function Indicator({ playerOrder, tableSize }: IndicatorProps) {
         setRingState("boardSetupTwo");
         break;
 
+      case "initial" :
+        setRingState("initial")
+        setPointerState("initial")
+        break
+
       default:
         setPointerState("initial");
+        setRingState("initial")
     }
   }, [tableState]);
 
@@ -120,14 +126,11 @@ export default function Indicator({ playerOrder, tableSize }: IndicatorProps) {
           {/* pointer */}
           <motion.div
             initial={{
-              // width: tableSize / 5,
-              // height: tableSize / 5,
               width : 0,
               height : 0,
               rotateZ: 45,
               y: 0,
             }}
-            // initial={{ y: 0 }}
             animate={pointerAnimation[pointerState].animate}
             className=" bg-darkgreen absolute rounded-lg"
           />

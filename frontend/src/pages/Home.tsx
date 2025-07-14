@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { cn } from "../utils/cn";
 import { useEffect, useState } from "react";
 import HomeCard from "../components/HomeCard";
+import BgmSetting from "../components/BgmSetting";
 export default function HomePage() {
   const navigate = useNavigate();
   const [inputedRoomCode, setInputedRoomCode] = useState("");
@@ -26,7 +27,9 @@ export default function HomePage() {
       return;
     }
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}validate/${inputedRoomCode}`);
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}validate/${inputedRoomCode}`
+      );
       if (res.ok) {
         navigate(`/room/${inputedRoomCode}`);
       } else {
@@ -51,6 +54,7 @@ export default function HomePage() {
       className="inline-flex flex-col items-center justify-center w-screen h-screen overflow-hidden relative
                   bg-radial from-primary via-lime-200 to-cyan-800"
     >
+      <BgmSetting />
       <HomeCard />
       <div
         className="z-[51] bg-gradient-to-t from-gray-800 to-gray-600 w-[250px] h-[800px]
@@ -147,15 +151,125 @@ export default function HomePage() {
 
 const Footer = () => {
   return (
-    <div className="z-[51] absolute bg-gray-700 text-white/80 bottom-2 font-mono px-2 text-[12px] rounded-md text-center border-2 border-gray-500 shadow-sm shadow-black">
-      Demo project made by P.Phuwis<br></br>see more on my{" "}
-      <a
-        target="_blank"
-        href={"https://phuwis-portfolio.vercel.app/"}
-        className="text-lime-500/80 underline"
-      >
-        portfolio
-      </a>
+    <div className="z-[52] absolute bg-gray-700 text-white/80 bottom-2 font-mono px-2 text-[12px] rounded-md text-center border-2 border-gray-500 shadow-sm shadow-black">
+      <Acknowledgments />
+      <br />© 2025 Phuwis — Liar's card
     </div>
   );
 };
+
+export function Acknowledgments() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="text-blue-300 rounded-lg underline"
+      >
+        Acknowledgments
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 font-nippo">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-lg relative">
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute top-2 right-4 text-gray-600 hover:text-black text-xl"
+            >
+              &times;
+            </button>
+
+            <h2 className="text-2xl font-semibold mb-4 text-black">
+              Sound & Music Credits
+            </h2>
+            <ul className="space-y-4 text-sm text-gray-800">
+              <li>
+                <strong>slap-cards</strong> by <em>themfish</em> —{" "}
+                <a
+                  href="https://freesound.org/s/45821/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline"
+                >
+                  Freesound
+                </a>{" "}
+                (License: Attribution 4.0)
+              </li>
+              <li>
+                <strong>Card Flip</strong> by <em>f4ngy</em> —{" "}
+                <a
+                  href="https://freesound.org/s/240776/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline"
+                >
+                  Freesound
+                </a>{" "}
+                (License: Attribution 4.0)
+              </li>
+              <li>
+                Sound Effect by{" "}
+                <a
+                  href="https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=6346"
+                  className="text-blue-600 underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  freesound_community
+                </a>{" "}
+                from{" "}
+                <a
+                  href="https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=6346"
+                  className="text-blue-600 underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Pixabay
+                </a>
+              </li>
+              <li>
+                Music by{" "}
+                <a
+                  href="https://pixabay.com/users/backgroundmusicforvideos-46459014/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=353636"
+                  className="text-blue-600 underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Maksym Malko
+                </a>{" "}
+                from{" "}
+                <a
+                  href="https://pixabay.com/music//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=353636"
+                  className="text-blue-600 underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Pixabay
+                </a>
+              </li>
+            </ul>
+            <div className="flex flex-col mt-10">
+              <h2 className="text-2xl font-semibold mb-4 text-black">
+                Card visual inspiration
+              </h2>
+              <div className="text-black text-sm text-balance">
+                The card design was inspired by the minimalist aesthetic of
+                <a
+                  className="px-1 underline text-blue-600"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href="https://www.kickstarter.com/projects/imaginative-monkey/light-roast-playing-cards/creator"
+                >
+                  Siavash Mortazavi’s
+                </a>
+                work. This is a personal hobby project and not affiliated with
+                or endorsed by them.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

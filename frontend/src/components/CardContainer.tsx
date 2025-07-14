@@ -12,6 +12,12 @@ import {
 } from "../store/inGameAnnounceStore";
 import { useTableStateStore } from "../store/tableStateStore";
 import { useWindowSizeStore } from "../store/windowSizeStateStore";
+import {
+  PlayCardPlayedSound,
+  PlayDealCardSound,
+  PlaySelectCardSound,
+  PlayFlipSound,
+} from "../utils/sound";
 
 interface CardContainerProps {
   cards: number[];
@@ -24,7 +30,8 @@ export default function CardContainer({
   selectCardIndices,
   handleSelectCard,
 }: CardContainerProps) {
-  const { currentMode, processNext } = useCardAnimationStore();
+  const { currentMode, processNext } =
+    useCardAnimationStore();
   const cardX = Array.from({ length: 5 }, () => useMotionValue(0));
   const cardY = Array.from({ length: 5 }, () => useMotionValue(0));
   const ref = useRef<HTMLDivElement>(null);
@@ -47,7 +54,9 @@ export default function CardContainer({
       })
     );
   }, [cards]);
-          {/* animation state show TODO : DELETE */}
+  {
+    /* animation state show TODO : DELETE */
+  }
 
   useEffect(() => {
     const handleResize = () => {
@@ -115,6 +124,11 @@ export default function CardContainer({
           type: "spring",
           bounce: 0,
           delay: i * 0.1,
+          onPlay: () => {
+            setTimeout(() => {
+              PlayDealCardSound();
+            }, i * 100); // Match the delay on card animation
+          },
           onComplete: () => {
             if (cards.length == i + 1) {
               processNext();
@@ -205,6 +219,9 @@ export default function CardContainer({
             duration: 0.5,
             type: "spring",
             bounce: 0,
+            onPlay: () => {
+              PlayCardPlayedSound();
+            },
             onComplete: () => {
               count++;
               if (count === cardToAnimate) {
@@ -221,11 +238,21 @@ export default function CardContainer({
         setTimeout(() => {
           setFlippedCards((prev) => {
             const newFlips = [...prev];
-            newFlips[i] =
-              to === "back" ? true : to === "front" ? false : newFlips[i];
+            const current = newFlips[i];
+
+            const isChanging =
+              (current === false && to === "back") || // front → back
+              (current === true && to === "front"); // back → front
+
+            if (isChanging) {
+              PlayFlipSound(i, to);
+              newFlips[i] = to === "back"; // true if back, false if front
+            }
+
             return newFlips;
           });
-          if (flip.length - 1 === i) {
+
+          if (i === flip.length - 1) {
             processNext();
           }
         }, i * 100);
@@ -303,6 +330,7 @@ export default function CardContainer({
     }
     if (currentMode === CardAnimationMode.Ready && isCardSelectable) {
       cardSelectY();
+      PlaySelectCardSound();
     }
   }, [cards, windowWidth, selectCardIndices, currentMode]);
 
@@ -409,23 +437,22 @@ export default function CardContainer({
 // >
 //   {show ? "hide" : "show"}
 // </button>
-// <div
-//   className={`absolute flex flex-col font-pixelify -mt-[350px] ${
-//     showAni ? "" : "hidden"
-//   }`}
-// >
-//   {Object.values(CardAnimationMode).map((b) => (
-//     <button
-//       key={b}
-//       className="text-white bg-black rounded-full mb-1 w-[100px]"
-//       onClick={() => addToQueue([b])}
-//     >
-//       {b}
-//     </button>
-//   ))}
-//   <div className="flex flex-row gap-x-1">
-//     {queue.map((q, i) => (
-//       <div key={i}>{q}</div>
-//     ))}
-//   </div>
-// </div>
+
+      // <div
+      //   className={`absolute left-0 flex flex-col font-pixelify -mt-[350px]    }`}
+      // >
+      //   {Object.values(CardAnimationMode).map((b) => (
+      //     <button
+      //       key={b}
+      //       className="text-white bg-black rounded-full mb-1 w-[100px]"
+      //       onClick={() => addToQueue([b])}
+      //     >
+      //       {b}
+      //     </button>
+      //   ))}
+      //   <div className="flex flex-row gap-x-1">
+      //     {queue.map((q, i) => (
+      //       <div key={i}>{q}</div>
+      //     ))}
+      //   </div>
+      // </div>
