@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight, FaEquals } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
 import { CardsArt } from "./CardsArt";
 import { motion } from "motion/react";
 import { cn } from "../utils/cn";
+import { PCOLOR } from "../constant";
+import crown from "../assets/svg/c.png";
 
 interface HowtoplayModalProps {
   setShowHowtoplayModal: (show: boolean) => void;
@@ -42,7 +44,7 @@ export default function HowtoplayModal({
         "If the last player was lying: they lose 1 chance.",
         "If they were honest: the caller loses 1 chance.",
       ],
-      component:<NextPlayerChoice />,
+      component: <NextPlayerChoice />,
     },
     jokerRule: {
       title: "Joker Rules",
@@ -50,24 +52,24 @@ export default function HowtoplayModal({
         "Jokers are wild cards that can match any card.",
         "Example: 2 Kings + 1 Joker = 3 Kings in a King round.",
       ],
-      component: <></>,
+      component: <JokerRule />,
     },
-    forceCall: {
-      title: 'Forced "Call Liar"',
-      content: [
-        "If the last player used their final cards and you have no cards, you're forced to Call Liar.",
-        "If you still have cards, you can either Call Liar or Throw Cards.",
-        "Throwing cards in this case may force the next player (who also has no cards) to Call Liar.",
-      ],
-      component: <></>,
-    },
+    // forceCall: {
+    //   title: 'Forced "Call Liar"',
+    //   content: [
+    //     "If the last player used their final cards and you have no cards, you're forced to Call Liar.",
+    //     "If you still have cards, you can either Call Liar or Throw Cards.",
+    //     "Throwing cards in this case may force the next player (who also has no cards) to Call Liar.",
+    //   ],
+    //   component: <></>,
+    // },
     winningCondition: {
       title: "Winning the Game",
       content: [
         "When only one player has chances left, they win the round and earn 1 point.",
         "The game resets for the next round and continues until the set number of rounds is reached.",
       ],
-      component: <></>,
+      component: <WinningCondition />,
     },
   };
   const [currentStep, setCurrentStep] = useState(0);
@@ -88,7 +90,8 @@ export default function HowtoplayModal({
     <>
       <div className="absolute flex items-center justify-center w-full h-full bg-stone-500/80 z-[52] font-nippo">
         <div
-          className="relative flex items-center justify-center flex-col sm:w-[510px] sm:h-[440px] w-[400px] h-[340px] bg-gradient-to-t from-lime-200 to-darkgreen
+          className="relative flex items-center justify-center flex-col sm:w-[510px] sm:h-[440px] w-[400px] h-[440px]
+           bg-radial from-white to-lime-300
            z-[53] rounded-3xl text-black shadow-md shadow-gray-800 mx-2"
         >
           <button
@@ -108,7 +111,7 @@ export default function HowtoplayModal({
             <div className="h-[190px] rounded-lg bg-black/20">
               {sections[currentStep].component}
             </div>
-            <ul className="mt-2 list-disc list-inside space-y-1 text-sm text-left">
+            <ul className="text-black/80 mt-2 list-disc list-inside space-y-1 text-sm text-left">
               {sections[currentStep].content.map((line, idx) => (
                 <li key={idx}>{line}</li>
               ))}
@@ -117,28 +120,30 @@ export default function HowtoplayModal({
 
           {/* Navigation Buttons */}
           <div className="mt-auto mb-2 flex gap-4 w-full justify-between px-4 h-10  items-center">
-            <button
+            <motion.button
               onClick={goPrev}
+              whileTap={{y:2}}
               disabled={isFirst}
               className={`${
-                isFirst ? "opacity-0" : ""
-              } hover:bg-black/20 p-1 rounded-full transition-colors`}
+                isFirst ? "opacity-0 " : ""
+              }w-20 justify-center text-sm flex flex-row items-center gap-x-1 hover:bg-darkgreen/80 bg-darkgreen text-white/80 px-2 rounded-lg transition-colors`}
             >
-              <FaArrowLeft size={15} />
-            </button>
-            <button
+              Previous
+            </motion.button>
+            <motion.button
               onClick={goNext}
+              whileTap={{y:2}}
               disabled={isLast}
               className={`${
-                isLast ? "opacity-0" : ""
-              } hover:bg-black/20 p-1 rounded-full transition-colors`}
+                isLast ? "opacity-0 " : ""
+              }w-20 justify-center text-sm flex flex-row items-center gap-x-1 hover:bg-darkgreen/80 bg-darkgreen text-white/80 px-2 rounded-lg transition-colors`}
             >
-              <FaArrowRight size={15} />
-            </button>
+              Next
+            </motion.button>
             {isLast && (
               <button
                 onClick={() => setShowHowtoplayModal(false)}
-                className="bg-lime-500 px-2 rounded-lg text-white/80 hover:opacity-80"
+                className="w-20 text-sm bg-lime-500 px-2 rounded-lg text-white/80 hover:opacity-80"
               >
                 OK
               </button>
@@ -264,9 +269,13 @@ const GameStart = () => {
       <div className="flex flex-row -space-x-[100px] absolute right-0">
         <HandExample count={5} scale={0.35} isBackSide />
       </div>
-      <div className="absolute bottom-2 right-2 text-sm px-2 bg-cyan-500 rounded-full text-white">
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        className="absolute bottom-2 right-2 text-sm px-2 bg-cyan-500 rounded-full text-white"
+      >
         5 cards for each player
-      </div>
+      </motion.div>
     </div>
   );
 };
@@ -335,40 +344,40 @@ const HandExample = ({
 };
 
 const getRandomPickingIndexes = () => {
-  const all = [0, 1, 2, 3, 4]
-  const count = Math.floor(Math.random() * 3) + 1 // 1 to 3
-  const shuffled = all.sort(() => 0.5 - Math.random())
-  return shuffled.slice(0, count)
-}
+  const all = [0, 1, 2, 3, 4];
+  const count = Math.floor(Math.random() * 3) + 1; // 1 to 3
+  const shuffled = all.sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count);
+};
 
 const PlayingTurn = () => {
   const [pickingIndex, setPickingIndex] = useState<number[]>([]);
   useEffect(() => {
-    let isMounted = true
+    let isMounted = true;
 
     const loop = () => {
-      if (!isMounted) return
+      if (!isMounted) return;
 
       // Step 1: Pick random cards
-      const picked = getRandomPickingIndexes()
-      setPickingIndex(picked)
+      const picked = getRandomPickingIndexes();
+      setPickingIndex(picked);
 
       // Step 2: Clear after a while, then loop again
       setTimeout(() => {
-        if (!isMounted) return
-        setPickingIndex([])
+        if (!isMounted) return;
+        setPickingIndex([]);
 
-        setTimeout(loop, 800) // Wait before next round
-      }, 1000) // Show cards for 1 sec
-    }
+        setTimeout(loop, 800); // Wait before next round
+      }, 1000); // Show cards for 1 sec
+    };
 
     // Start the loop
-    loop()
+    loop();
 
     return () => {
-      isMounted = false
-    }
-  }, [])
+      isMounted = false;
+    };
+  }, []);
   return (
     <div className="relative flex w-full h-full">
       <motion.div
@@ -392,12 +401,12 @@ const PlayingTurn = () => {
         style={{ left: "50%", translateX: "-50%" }}
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        className={`absolute bottom-4 transition-colors font-silk text-sm px-2 text-gray-800
+        className={`absolute bottom-4 transition-colors font-silk text-sm px-2 text-white
        rounded-full ${
          pickingIndex.length > 0 ? "bg-lime-500" : "bg-gray-200"
        } flex items-center justify-center shadow-sm shadow-black`}
       >
-        Throw cards
+        Throw card
       </motion.div>
     </div>
   );
@@ -405,25 +414,135 @@ const PlayingTurn = () => {
 
 const NextPlayerChoice = () => {
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full flex">
       <motion.div
         style={{ left: "50%", translateX: "-50%" }}
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        className={`absolute bottom-4 transition-colors font-silk text-sm px-2 text-gray-800
-       rounded-full bg-lime-500 flex items-center justify-center shadow-sm shadow-black`}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 100, y: 0 }}
+        className="absolute flex flex-row bg-black/40 px-2 w-[250px] top-3 py-3 space-x-2 rounded-lg"
       >
-        Throw cards
+        <div
+          style={{ backgroundColor: PCOLOR[0] }}
+          className="text-sm shadow-sm shadow-black
+       px-2 py-2 rounded-lg font-pixelify flex flex-row items-center gap-x-2 justify-center"
+        >
+          <div className="flex flex-row items-center gap-x-1">
+            <div className="text-white">Chance</div>
+            <div className="flex flex-row gap-x-2">
+              <div className="w-2 h-2  bg-white/70" />
+              <div className="w-2 h-2  bg-white/70" />
+            </div>
+          </div>
+        </div>
+        <div className="text-sm text-white/80 text-start">
+          Each player given
+          <br />2 chance per round
+        </div>
       </motion.div>
-      <motion.div
-        style={{ left: "50%", translateX: "-50%" }}
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        className={`absolute bottom-4 transition-colors font-silk text-sm px-2 text-gray-800
-       rounded-full w-[128px] bg-rose-500 flex items-center justify-center shadow-sm shadow-black`}
-      >
-      Call liar!
-      </motion.div>
+      <div className="flex flex-row w-full items-center justify-center gap-x-2 self-end mb-2">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 100, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="text-sm flex flex-col items-center w-[170px] space-y-2 bg-black/40 py-3 rounded-lg"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className={`transition-colors font-silk text-sm px-2 text-white
+       rounded-full w-[115px] bg-deepred flex items-center justify-center shadow-sm shadow-black`}
+          >
+            Call liar!
+          </motion.div>
+          <div className="text-balance text-white/80">
+            Call if you think last turn was a bluff
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-sm"
+        >
+          OR
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 100, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="text-sm flex flex-col items-center w-[170px] space-y-2 bg-black/40 py-3 rounded-lg"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className={`transition-colors font-silk text-sm px-2 
+       rounded-full text-white bg-lime-500 flex items-center justify-center shadow-sm shadow-black`}
+          >
+            Throw card
+          </motion.div>
+          <div className="text-balance text-white/80">
+            Continue to play
+            <br /> your card
+          </div>
+        </motion.div>
+      </div>
     </div>
-  )
-}
+  );
+};
+
+const JokerRule = () => {
+  return (
+    <div className="w-full h-full flex items-center">
+      <div className="flex flex-row gap-x-2 justify-between px-2 w-full">
+        <div className="relative bg-black/40 rounded-lg">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="z-10 absolute text-white/80 -right-5 top-1/2 -translate-y-1/2 bg-cyan-500 p-2 rounded-full"
+          >
+            <FaEquals />
+          </motion.div>
+          <motion.div
+            style={{ scale: 0.5 }}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 100 }}
+            className="border-gray-200 shadow-sm shadow-black border
+           items-center justify-center w-[120px] h-[170px] bg-white rounded-lg "
+          >
+            <CardsArt card={4} />
+          </motion.div>
+        </div>
+        <div className="relative flex flex-row sm:-space-x-[50px] -space-x-[85px] bg-black/40 rounded-lg">
+          <HandExample count={4} scale={0.5} rotateStep={0} />
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            style={{ left: "50%", translateX: "-25%" }}
+            className="absolute text-sm bottom-2 bg-cyan-500 text-white/80 px-2 sm:text-nowrap text-balance rounded-full"
+          >
+            Each Joker can act as any 1 card
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const WinningCondition = () => {
+  return (
+    <div className="w-full h-full flex items-center justify-center overflow-hidden relative">
+      <div className="w-[200px] h-[200px] absolute from-yellow-300 via-yellow-100 to-transparent rounded-full bg-radial" />
+      <motion.img
+        animate={{ rotateZ: [-10, 0, 10] }}
+        transition={{
+          repeat: Infinity,
+          repeatType: "mirror",
+          repeatDelay: 0.3,
+        }}
+        src={crown}
+        alt="crown"
+        className=""
+      />
+    </div>
+  );
+};
