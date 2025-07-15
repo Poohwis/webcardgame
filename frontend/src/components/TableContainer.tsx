@@ -21,7 +21,16 @@ import { cn } from "../utils/cn";
 import { useWindowSizeStore } from "../store/windowSizeStateStore";
 import { CARDSNAME } from "../constant";
 import CallRipple from "./CallRipple";
-import { PlayCallCardSound, PlayDealCardSound, PlayDownCardSound, PlayGatherCardSound, PlayRevealCardSound, PlayScatterCardSound, PlaySlapSound, PlaySlidingCardSound } from "../utils/sound";
+import {
+  PlayCallCardSound,
+  PlayDealCardSound,
+  PlayDownCardSound,
+  PlayGatherCardSound,
+  PlayRevealCardSound,
+  PlayScatterCardSound,
+  PlaySlapSound,
+  PlaySlidingCardSound,
+} from "../utils/sound";
 
 export const ONTABLECARD_WIDTH = 100;
 export const ONTABLECARD_HEIGHT = 142;
@@ -241,7 +250,7 @@ export default function TableContainer({
           : c
       );
     });
-    PlayRevealCardSound()     
+    PlayRevealCardSound();
     await wait(1000);
     setAnimationMode("down");
     setPlayedCardStack((prev) => {
@@ -252,7 +261,7 @@ export default function TableContainer({
           : c
       );
     });
-    PlaySlapSound()
+    PlaySlapSound();
     await wait(200);
     setAnimationMode("default");
     setPlayedCardStack((prev) => {
@@ -274,7 +283,7 @@ export default function TableContainer({
   const explode = async () => {
     setAnimationMode("explode");
     setPlayedCardStack((prev) => {
-    PlayScatterCardSound()
+      PlayScatterCardSound();
       return prev.map((c) => {
         const angle = Math.random() * Math.PI * 2;
         const distance = Math.random() * 100 + TABLE_SIZE;
@@ -327,7 +336,7 @@ export default function TableContainer({
             : c
         )
       );
-      PlayCallCardSound(1, 200, 1000)
+      PlayCallCardSound(1, 200, 1000);
       await wait(100);
     }
     await wait(3000);
@@ -359,9 +368,9 @@ export default function TableContainer({
         )
       );
     }
-    PlaySlapSound()
+    PlaySlapSound();
     await wait(200);
-    PlayScatterCardSound()
+    PlayScatterCardSound();
 
     //Forth: Jitter down card
     for (const card of calledCardStack) {
@@ -446,8 +455,10 @@ export default function TableContainer({
           card: "",
         },
       ]);
-      
-      PlayDownCardSound(i)
+
+      if (i % 2 === 0) {
+      PlayDownCardSound(i);
+      }
       await wait(40);
     }
 
@@ -459,7 +470,7 @@ export default function TableContainer({
     setAnimationMode("default");
     const diffPosition = ((4 + lastPlayedBy - playerOrder) % 4) + 1;
     for (let i = 0; i < lastPlayCount; i++) {
-      PlaySlidingCardSound()
+      PlaySlidingCardSound();
       setPlayedCardStack((prev) => {
         const target = prev.find((c) => c.dealToOrder === diffPosition)?.zIndex;
         if (!target) {
@@ -533,7 +544,7 @@ export default function TableContainer({
             : c
         )
       );
-      PlayCallCardSound(1, 200, 1000)
+      PlayCallCardSound(1, 200, 1000);
       await wait(100);
     }
     await wait(3000);
@@ -624,8 +635,9 @@ export default function TableContainer({
         )
       );
       await wait(50);
-      PlayGatherCardSound( i  * 0.38)
-
+      if (i % 2 === 0) {
+        PlayGatherCardSound(i * 0.38);
+      }
     }
     await wait(500);
     tableProcessNext();
@@ -695,9 +707,9 @@ export default function TableContainer({
               : c
           );
         });
-        
+
         await wait(50);
-        PlayDealCardSound()
+        PlayDealCardSound();
       }
     }
     setAnimationMode("default");
@@ -710,7 +722,7 @@ export default function TableContainer({
     setAnimationMode("shuffle");
     const stackSize = Math.floor(Math.random() * 10) + 10;
     for (let i = 0; i < 3; i++) {
-      PlayDealCardSound()
+      PlayDealCardSound();
       setPlayedCardStack((prev) =>
         prev.map((c) =>
           c.zIndex <= stackSize
@@ -846,7 +858,6 @@ export default function TableContainer({
           ))}
         </motion.div>
       </div>
-      
     </>
   );
 }
@@ -872,7 +883,8 @@ export default function TableContainer({
 //     </div>
 //   ))}
 // </div>
-{/* <div className="z-50 absolute left-[50%] flex flex-col font-pixelify items-start w-[150px]">
+{
+  /* <div className="z-50 absolute left-[50%] flex flex-col font-pixelify items-start w-[150px]">
         <div>tableState: {tableState}</div>
         <div>aniMode: {animationMode}</div>
         <button className="hover:cursor-pointer" onClick={() => resetCard()}>
@@ -930,4 +942,5 @@ export default function TableContainer({
         >
           testCallCheck
         </button>
-      </div> */}
+      </div> */
+}
