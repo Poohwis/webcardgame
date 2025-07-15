@@ -8,7 +8,10 @@ export default function HomePage() {
   const navigate = useNavigate();
   const [inputedRoomCode, setInputedRoomCode] = useState("");
   const [errMessage, setErrMessage] = useState("");
+  const [loadingCreateRoom, setLoadingCreateRoom] = useState(false);
+
   const handleCreateRoom = async () => {
+    setLoadingCreateRoom(true);
     try {
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}create`);
       const roomURL = await response.text();
@@ -17,6 +20,8 @@ export default function HomePage() {
       navigate(`/room/${roomId}`);
     } catch (err) {
       console.error("Error creating room:", err);
+    } finally {
+      setLoadingCreateRoom(false);
     }
   };
   const handleJoinRoom = async () => {
@@ -92,9 +97,14 @@ export default function HomePage() {
             onClick={handleCreateRoom}
             exit={{ x: 230 }}
             transition={{ delay: 0.3 }}
-            className="font-silk bg-black px-2 text-white/80 group hover:cursor-pointer relative w-[140px] h-6 flex flex-row overflow-hidden rounded-sm justify-end"
+            className={cn(
+              "font-silk bg-black px-2 text-white/80 group hover:cursor-pointer relative w-[140px] h-6 flex flex-row overflow-hidden rounded-sm justify-end",
+              loadingCreateRoom ? "opacity-50 cursor-wait" : ""
+            )}
           >
-            <div className="z-20">Create room</div>
+            <div className="z-20">
+              {loadingCreateRoom ? "Creating..." : "Create room"}
+            </div>
             <div className="bg-lime-500 h-6 w-[140px] absolute -right-[140px] z-10 group-hover:-translate-x-[140px] transition-transform" />
           </motion.button>
 

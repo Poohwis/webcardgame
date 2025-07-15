@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FaArrowLeft, FaArrowRight, FaEquals } from "react-icons/fa";
+import { FaEquals } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
 import { CardsArt } from "./CardsArt";
 import { motion } from "motion/react";
