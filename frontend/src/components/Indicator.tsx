@@ -86,7 +86,6 @@ export default function Indicator({ playerOrder, tableSize }: IndicatorProps) {
 
       default:
         setPointerState("initial");
-        setRingState("initial")
     }
   }, [tableState]);
 

@@ -398,7 +398,7 @@ const LargeBanner = ({
   isBannerShow,
 }: BannerProps & { isTopBanner: boolean; position: React.CSSProperties }) => {
   const hilightColor = chroma.mix(PCOLOR[playerOrder - 1], "white", 0.4).hex();
-  const width = 162;
+  const width = 180;
   const height = 72;
   const hilightOffset = 10;
   const [animatedScore, setAnimatedScore] = useState(score);

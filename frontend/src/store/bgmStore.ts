@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import * as Tone from "tone";
 import { playBGM, stopBGM, toggleMute } from "../utils/bgm";
 
 interface BgmStore {
@@ -9,8 +10,10 @@ interface BgmStore {
   toggle: () => void;
 }
 
+let toneStarted = false
 export const useBgmStore = create<BgmStore>((set, get) => ({
-  muted: localStorage.getItem("bgm-muted") === "true",
+  // muted: localStorage.getItem("bgm-muted") === "true",
+  muted : true,
   playing: false,
 
   play: () => {
@@ -26,8 +29,13 @@ export const useBgmStore = create<BgmStore>((set, get) => ({
     set({ playing: false });
   },
 
-  toggle: () => {
+  toggle: async() => {
     const current = get().muted;
+     if (!toneStarted) {
+      await Tone.start();
+      toneStarted = true;
+      console.log("Tone.js AudioContext started");
+    }
     toggleMute();
     localStorage.setItem("bgm-muted", (!current).toString());
     set({ muted: !current });
